@@ -17,7 +17,6 @@ class Keys(object):
     LEFT = [27, 91, 65]
     BOTTOM = [27, 91, 66]
 
-
 def key_listener():
     # initialize terminal
     oldterm = termios.tcgetattr(STDIN)
@@ -41,7 +40,7 @@ def key_listener():
                     if e.errno == errno.EAGAIN:
                         break
             # handle ANSI arrow keys sequence
-            if len(sequence) == 3 and sequence[:2] == [27, 91]:
+            if len(sequence) in [3, 4] and sequence[0] == 27 and sequence[1] in [91, 79]:
                 yield sequence
                 sequence = []
             # handle normal keys
