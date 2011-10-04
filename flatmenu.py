@@ -8,47 +8,53 @@ import select
 import errno
 
 STDIN = sys.stdin.fileno()
-    
-class Keyboard(object):
-    enabled = False
-    def start(self):
-        self._oldterm = termios.tcgetattr(STDIN)
-        newattr = termios.tcgetattr(STDIN)
-        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(STDIN, termios.TCSANOW, newattr)
-        self._old = fcntl.fcntl(STDIN, fcntl.F_GETFL)
-        fcntl.fcntl(STDIN, fcntl.F_SETFL, self._old | os.O_NONBLOCK)
-        self.enabled = True
-    def end(self, *args):
-        if self.enabled:
-            termios.tcsetattr(STDIN, termios.TCSAFLUSH, self._oldterm)
-            fcntl.fcntl(STDIN, fcntl.F_SETFL, self._old)
-        self.enabled = False
-    def getKey(self):
-        select.select([STDIN], [], [])
-        return sys.stdin.read(1)
-    def getKeyCode(self):
-        return ord(self.getKey())
-    def getSequence(self):
+
+class Keys(object):
+    ESC = [27]
+    RETURN = [10]
+    RIGHT = [27, 91, 68]
+    TOP = [27, 91, 65]
+    LEFT = [27, 91, 65]
+    BOTTOM = [27, 91, 66]
+
+
+def key_listener():
+    # initialize terminal
+    oldterm = termios.tcgetattr(STDIN)
+    newattr = termios.tcgetattr(STDIN)
+    newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+    termios.tcsetattr(STDIN, termios.TCSANOW, newattr)
+    old = fcntl.fcntl(STDIN, fcntl.F_GETFL)
+    fcntl.fcntl(STDIN, fcntl.F_SETFL, old | os.O_NONBLOCK)
+
+    try:
+        # return keys
         sequence = []
-        select.select([STDIN], [], [])
         while True:
-            try:
-                sequence.append(ord(sys.stdin.read(1)))
-            except IOError, e:
-                if e.errno == errno.EAGAIN:
-                    break
-        return sequence
-
-    def __enter__(self):
-        self.start()
-        return self
-    def __exit__(self, *args):
-        self.end()
-
+            # wait for keys to become available
+            select.select([STDIN], [], [])
+            # read all available keys
+            while True:
+                try:
+                    sequence.append(ord(sys.stdin.read(1)))
+                except IOError, e:
+                    if e.errno == errno.EAGAIN:
+                        break
+            # handle ANSI arrow keys sequence
+            if len(sequence) == 3 and sequence[:2] == [27, 91]:
+                yield sequence
+                sequence = []
+            # handle normal keys
+            else:
+                for key in sequence:
+                    yield [key]
+                sequence = []
+    finally:
+        # reset terminal
+        termios.tcsetattr(STDIN, termios.TCSAFLUSH, oldterm)
+        fcntl.fcntl(STDIN, fcntl.F_SETFL, old)
+    
 if __name__ == "__main__":
-    with Keyboard() as keyboard:
-        while True:
-            sequence = keyboard.getSequence()
-            print sequence
+    for key in key_listener():
+        print key
 
