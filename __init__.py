@@ -1,1 +1,1 @@
-from flatmenu import *
+from termenu import *
