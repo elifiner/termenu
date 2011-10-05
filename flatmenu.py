@@ -6,6 +6,7 @@ import fcntl
 import termios
 import select
 import errno
+import contextlib
 
 STDIN = sys.stdin.fileno()
 
@@ -17,16 +18,35 @@ class Keys(object):
     LEFT = [27, 91, 65]
     BOTTOM = [27, 91, 66]
 
-def key_listener():
-    # initialize terminal
-    oldterm = termios.tcgetattr(STDIN)
-    newattr = termios.tcgetattr(STDIN)
-    newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-    termios.tcsetattr(STDIN, termios.TCSANOW, newattr)
-    old = fcntl.fcntl(STDIN, fcntl.F_GETFL)
-    fcntl.fcntl(STDIN, fcntl.F_SETFL, old | os.O_NONBLOCK)
+class RawTerminal(object):
+    def __init__(self, blocking=True):
+        self._blocking = blocking
 
-    try:
+    def open(self):
+        # Set raw mode
+        self._oldterm = termios.tcgetattr(STDIN)
+        newattr = termios.tcgetattr(STDIN)
+        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+        termios.tcsetattr(STDIN, termios.TCSANOW, newattr)
+
+        # Set non-blocking IO on stdin
+        self._old = fcntl.fcntl(STDIN, fcntl.F_GETFL)
+        if not self._blocking:
+            fcntl.fcntl(STDIN, fcntl.F_SETFL, self._old | os.O_NONBLOCK)
+
+    def close(self):
+        # Restore previous terminal mode
+        termios.tcsetattr(STDIN, termios.TCSAFLUSH, self._oldterm)
+        fcntl.fcntl(STDIN, fcntl.F_SETFL, self._old)
+
+    def __enter__(self):
+        self.open()
+
+    def __exit__(self, *args):
+        self.close()
+
+def key_listener():
+    with RawTerminal(blocking=False):
         # return keys
         sequence = []
         while True:
@@ -48,10 +68,6 @@ def key_listener():
                 for key in sequence:
                     yield [key]
                 sequence = []
-    finally:
-        # reset terminal
-        termios.tcsetattr(STDIN, termios.TCSAFLUSH, oldterm)
-        fcntl.fcntl(STDIN, fcntl.F_SETFL, old)
     
 if __name__ == "__main__":
     for key in key_listener():
