@@ -1,5 +1,3 @@
-# An attempt to implement a one-line menu in the terminal
-
 import os
 import sys
 import fcntl
@@ -9,7 +7,7 @@ import errno
 
 STDIN = sys.stdin.fileno()
 
-KEY_SEQUENCES = dict(
+ANSI_SEQUENCES = dict(
     up = '\x1b[A',
     down = '\x1b[B',
     right = '\x1b[C',
@@ -34,7 +32,7 @@ KEY_SEQUENCES = dict(
     F12 = '\x1b[24~',
 )
 
-KEY_NAMES = dict((v,k) for k,v in KEY_SEQUENCES.items())
+KEY_NAMES = dict((v,k) for k,v in ANSI_SEQUENCES.items())
 KEY_NAMES.update({
     '\x1b' : 'esc', 
     '\n' : 'enter'
@@ -90,7 +88,7 @@ def keyboard_listener():
                         break
             # handle ANSI key sequences
             while sequence:
-                for seq in KEY_SEQUENCES.values():
+                for seq in ANSI_SEQUENCES.values():
                     if sequence[:len(seq)] == seq:
                         yield KEY_NAMES[seq]
                         sequence = sequence[len(seq):]
