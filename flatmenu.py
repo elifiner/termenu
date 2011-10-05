@@ -8,13 +8,13 @@ class Ansi(object):
     showCursor = "\x1b[?25h"
     clearLine = "\x1b[2K"
 
-def show_menu(options, default=0):
+def show_menu(header, options, default=0, clearOnExit=False, separator=" | "):
     def _print(data):
         sys.stdout.write(data)
     def _printMenu():
         optionsCopy = list(options)
         optionsCopy[selected] = Ansi.startHighlight + optionsCopy[selected] + Ansi.endHighlight
-        _print("\r" + " ".join(optionsCopy))
+        _print("\r" + header + separator.join(optionsCopy))
         sys.stdout.flush()
     selected = max(0, default % len(options))
     _print(Ansi.hideCursor)
@@ -26,13 +26,15 @@ def show_menu(options, default=0):
             elif key == "left":
                 selected = (selected + len(options) - 1) % len(options)
             elif key == "enter":
+                _print("\n")
                 return options[selected]
             elif key == "esc":
                 return None
             _printMenu()
     finally:
-        _print(Ansi.clearLine + "\r")
+        if clearOnExit:
+            _print(Ansi.clearLine + "\r")
         _print(Ansi.showCursor)
     
 if __name__ == "__main__":
-    print show_menu(["one", "two", "three", "four"], 1)
+    print show_menu("Select: ", ["one", "two", "three", "four"], 1)
