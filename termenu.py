@@ -11,6 +11,7 @@ class Ansi(object):
 def show_menu(header, options, default=0, clearOnExit=False, separator=" | "):
     def _print(data):
         sys.stdout.write(data)
+        sys.stdout.flush()
     def _printMenu():
         optionsCopy = list(options)
         optionsCopy[selected] = Ansi.startHighlight + optionsCopy[selected] + Ansi.endHighlight
@@ -26,7 +27,6 @@ def show_menu(header, options, default=0, clearOnExit=False, separator=" | "):
             elif key == "left":
                 selected = (selected + len(options) - 1) % len(options)
             elif key == "enter":
-                _print("\n")
                 return options[selected]
             elif key == "esc":
                 return None
@@ -34,6 +34,8 @@ def show_menu(header, options, default=0, clearOnExit=False, separator=" | "):
     finally:
         if clearOnExit:
             _print(Ansi.clearLine + "\r")
+        else:
+            _print("\n")
         _print(Ansi.showCursor)
     
 if __name__ == "__main__":
