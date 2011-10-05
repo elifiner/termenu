@@ -8,34 +8,31 @@ class Ansi(object):
     showCursor = "\x1b[?25h"
     clearLine = "\x1b[2K"
 
-class Menu(object):
-    def __init__(self, *options):
-        self.options = options
-        self.selected = 0
-    def _printMenu(self):
-        optionsCopy = list(self.options)
-        optionsCopy[self.selected] = Ansi.startHighlight + optionsCopy[self.selected] + Ansi.endHighlight
-        self._print("\r" + " ".join(optionsCopy))
-        sys.stdout.flush()
-    def _print(self, data):
+def show_menu(options, default=0):
+    def _print(data):
         sys.stdout.write(data)
-    def run(self):
-        self._print(Ansi.hideCursor)
-        try:
-            self._printMenu()
-            for key in keyboard.keyboard_listener():
-                if key == "right":
-                    self.selected = (self.selected + 1) % len(self.options)
-                elif key == "left":
-                    self.selected = (self.selected + len(self.options) - 1) % len(self.options)
-                elif key == "enter":
-                    return self.options[self.selected]
-                elif key == "esc":
-                    return None
-                self._printMenu()
-        finally:
-            self._print("\r" + Ansi.clearLine + Ansi.showCursor)
+    def _printMenu():
+        optionsCopy = list(options)
+        optionsCopy[selected] = Ansi.startHighlight + optionsCopy[selected] + Ansi.endHighlight
+        _print("\r" + " ".join(optionsCopy))
+        sys.stdout.flush()
+    selected = max(0, default % len(options))
+    _print(Ansi.hideCursor)
+    try:
+        _printMenu()
+        for key in keyboard.keyboard_listener():
+            if key == "right":
+                selected = (selected + 1) % len(options)
+            elif key == "left":
+                selected = (selected + len(options) - 1) % len(options)
+            elif key == "enter":
+                return options[selected]
+            elif key == "esc":
+                return None
+            _printMenu()
+    finally:
+        _print(Ansi.clearLine + "\r")
+        _print(Ansi.showCursor)
     
 if __name__ == "__main__":
-    menu = Menu("one", "two", "tree", "boom")
-    print menu.run()
+    print show_menu(["one", "two", "three", "four"], 1)
