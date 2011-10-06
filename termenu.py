@@ -21,7 +21,7 @@ def show_menu(header, options, default=0, clearOnExit=False, separator=" | ", ma
     def _print(data):
         sys.stdout.write(data)
         sys.stdout.flush()
-    def _printMenu():
+    def _print_menu():
         first = selected - selected % maxItems
         optionsCopy = list(options)
         optionsCopy[selected] = Ansi.startHighlight + optionsCopy[selected] + Ansi.endHighlight
@@ -36,7 +36,7 @@ def show_menu(header, options, default=0, clearOnExit=False, separator=" | ", ma
     selected = max(0, default % len(options))
     _print(Ansi.hideCursor)
     try:
-        _printMenu()
+        _print_menu()
         for key in keyboard.keyboard_listener():
             if key == "right":
                 selected = (selected + 1) % len(options)
@@ -46,7 +46,7 @@ def show_menu(header, options, default=0, clearOnExit=False, separator=" | ", ma
                 return options[selected]
             elif key == "esc":
                 return None
-            _printMenu()
+            _print_menu()
     finally:
         if clearOnExit:
             _print(Ansi.clearLine + "\r")
