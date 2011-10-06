@@ -8,14 +8,30 @@ class Ansi(object):
     showCursor = "\x1b[?25h"
     clearLine = "\x1b[2K"
 
-def show_menu(header, options, default=0, clearOnExit=False, separator=" | "):
+# Get the size of the current terminal
+# (http://stackoverflow.com/questions/566746/how-to-get-console-window-width-in-python)
+def get_terminal_size():
+    import fcntl, termios, struct
+    h, w, hp, wp = struct.unpack('HHHH',
+        fcntl.ioctl(0, termios.TIOCGWINSZ,
+        struct.pack('HHHH', 0, 0, 0, 0)))
+    return w, h
+
+def show_menu(header, options, default=0, clearOnExit=False, separator=" | ", maxItems=7):
     def _print(data):
         sys.stdout.write(data)
         sys.stdout.flush()
     def _printMenu():
+        first = selected - selected % maxItems
         optionsCopy = list(options)
         optionsCopy[selected] = Ansi.startHighlight + optionsCopy[selected] + Ansi.endHighlight
-        _print("\r" + header + separator.join(optionsCopy))
+        optionsStr = separator.join(optionsCopy[first:first+maxItems])
+        if first > 0:
+            optionsStr = "< " + optionsStr
+        if first + maxItems < len(options):
+            optionsStr = optionsStr + " >"
+        _print(Ansi.clearLine + "\r")
+        _print(header + optionsStr)
         sys.stdout.flush()
     selected = max(0, default % len(options))
     _print(Ansi.hideCursor)
@@ -39,4 +55,4 @@ def show_menu(header, options, default=0, clearOnExit=False, separator=" | "):
         _print(Ansi.showCursor)
     
 if __name__ == "__main__":
-    print show_menu("Select: ", ["one", "two", "three", "four"], 1)
+    print show_menu("Select: ", ["one", "two", "three", "four", "five", "six", "seven"], maxItems=3)
