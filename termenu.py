@@ -78,10 +78,13 @@ class Menu(object):
             else:
                 self._print("\n")
             self._print(Ansi.showCursor)
+
+def show_menu(header, options, default=0, clearOnExit=False, separator="  "):
+    menu = Menu(header, options, default, clearOnExit, separator)
+    return menu.show()
     
 if __name__ == "__main__":
     import __builtin__
-    menu = Menu("Show help for: ", sorted(dir(__builtin__)), clearOnExit=True)
-    builtin = menu.show()
+    builtin = show_menu("Show help for: ", sorted(dir(__builtin__), key=lambda v: v.lower()), clearOnExit=True)
     if builtin:
         help(getattr(__builtin__, builtin))
