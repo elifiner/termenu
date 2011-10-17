@@ -2,7 +2,8 @@ import sys
 import keyboard
 
 class Ansi(object):
-    startHighlight = "\x1b[0;47;30m"
+    startSelected = "\x1b[0;47;30m"
+    startHeader = '\x1b[1;37m'
     endHighlight = "\x1b[m"
     hideCursor = "\x1b[?25l"
     showCursor = "\x1b[?25h"
@@ -35,14 +36,14 @@ class Menu(object):
     def _printMenu(self):
         [(first, last)] = [(start, end) for start, end in self.slices() if start <= self.selected < end]
         optionsCopy = list(self.options)
-        optionsCopy[self.selected] = Ansi.startHighlight + optionsCopy[self.selected] + Ansi.endHighlight
+        optionsCopy[self.selected] = Ansi.startSelected + optionsCopy[self.selected] + Ansi.endHighlight
         optionsStr = self.separator.join(optionsCopy[first:last])
         if first > 0:
             optionsStr = "< " + optionsStr
         if last < len(self.options):
             optionsStr = optionsStr + " >"
         self._print(Ansi.clearLine + "\r")
-        self._print(self.header + optionsStr)
+        self._print(Ansi.startHeader + self.header + Ansi.endHighlight + optionsStr)
         sys.stdout.flush()
 
     def _paginate(self, options, maxWidth):
