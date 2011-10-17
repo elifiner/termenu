@@ -17,42 +17,71 @@ def get_terminal_size():
         struct.pack('HHHH', 0, 0, 0, 0)))
     return w, h
 
-def show_menu(header, options, default=0, clearOnExit=False, separator=" | ", maxItems=7):
-    def _print(data):
+class Menu(object):
+    MARGIN = 5
+    def __init__(self, header, options, default=0, clearOnExit=False, separator="  "):
+        self.header = header
+        self.options = list(options)
+        self.default = default
+        self.clearOnExit = clearOnExit
+        self.separator = separator
+        self.selected = max(0, self.default % len(self.options))
+        self.slices = lambda: self._paginate(options, get_terminal_size()[0])
+
+    def _print(self, data):
         sys.stdout.write(data)
         sys.stdout.flush()
-    def _print_menu():
-        first = selected - selected % maxItems
-        optionsCopy = list(options)
-        optionsCopy[selected] = Ansi.startHighlight + optionsCopy[selected] + Ansi.endHighlight
-        optionsStr = separator.join(optionsCopy[first:first+maxItems])
+
+    def _printMenu(self):
+        [(first, last)] = [(start, end) for start, end in self.slices() if start <= self.selected < end]
+        optionsCopy = list(self.options)
+        optionsCopy[self.selected] = Ansi.startHighlight + optionsCopy[self.selected] + Ansi.endHighlight
+        optionsStr = self.separator.join(optionsCopy[first:last])
         if first > 0:
             optionsStr = "< " + optionsStr
-        if first + maxItems < len(options):
+        if last < len(self.options):
             optionsStr = optionsStr + " >"
-        _print(Ansi.clearLine + "\r")
-        _print(header + optionsStr)
+        self._print(Ansi.clearLine + "\r")
+        self._print(self.header + optionsStr)
         sys.stdout.flush()
-    selected = max(0, default % len(options))
-    _print(Ansi.hideCursor)
-    try:
-        _print_menu()
-        for key in keyboard.keyboard_listener():
-            if key == "right":
-                selected = (selected + 1) % len(options)
-            elif key == "left":
-                selected = (selected + len(options) - 1) % len(options)
-            elif key == "enter":
-                return options[selected]
-            elif key == "esc":
-                return None
-            _print_menu()
-    finally:
-        if clearOnExit:
-            _print(Ansi.clearLine + "\r")
-        else:
-            _print("\n")
-        _print(Ansi.showCursor)
+
+    def _paginate(self, options, maxWidth):
+        slices = []
+        start = 0
+        contents = []
+        for i, option in enumerate(options):
+            contents.append(option)
+            if len(self.header) + len(self.separator.join(contents)) + self.MARGIN > maxWidth:
+                slices.append((start, i))
+                start = i
+                contents = [option]
+        slices.append((start, len(options)))
+        return slices
+
+    def show(self):
+        self._print(Ansi.hideCursor)
+        try:
+            self._printMenu()
+            for key in keyboard.keyboard_listener():
+                if key == "right":
+                    self.selected = (self.selected + 1) % len(self.options)
+                elif key == "left":
+                    self.selected = (self.selected + len(self.options) - 1) % len(self.options)
+                elif key == "enter":
+                    return self.options[self.selected]
+                elif key == "esc":
+                    return None
+                self._printMenu()
+        finally:
+            if self.clearOnExit:
+                self._print(Ansi.clearLine + "\r")
+            else:
+                self._print("\n")
+            self._print(Ansi.showCursor)
     
 if __name__ == "__main__":
-    print show_menu("Select: ", ["one", "two", "three", "four", "five", "six", "seven"], maxItems=3)
+    import __builtin__
+    menu = Menu("Show help for: ", sorted(dir(__builtin__)), clearOnExit=True)
+    builtin = menu.show()
+    if builtin:
+        help(getattr(__builtin__, builtin))
