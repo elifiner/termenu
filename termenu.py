@@ -12,6 +12,15 @@ def get_terminal_size():
     return w, h
 
 class Menu(object):
+    """
+    An interactive one line menu to be used in console scripts.
+
+    Example:
+        menu = Menu("Select: ", ["item one", "item two", "item three"])
+        result = menu.show()
+        print result
+    """
+
     MARGIN = 5
     def __init__(self, header, options, default=0, clearOnExit=True, separator="  "):
         self.header = header
@@ -26,7 +35,7 @@ class Menu(object):
         sys.stdout.write(data)
         sys.stdout.flush()
 
-    def _printMenu(self):
+    def _print_menu(self):
         [(first, last)] = [(start, end) for start, end in self.slices() if start <= self.selected < end]
         optionsCopy = list(self.options)
         optionsCopy[self.selected] = ansi.colorize(optionsCopy[self.selected], "black", "white")
@@ -53,9 +62,13 @@ class Menu(object):
         return slices
 
     def show(self):
+        """
+        Show the menu and run the keyboard loop. The return value is the text of the chosen option
+        if Enter was pressed and None is Esc was pressed.
+        """
         ansi.hide_cursor()
         try:
-            self._printMenu()
+            self._print_menu()
             for key in keyboard.keyboard_listener():
                 if key == "right":
                     self.selected = (self.selected + 1) % len(self.options)
@@ -65,7 +78,7 @@ class Menu(object):
                     return self.options[self.selected]
                 elif key == "esc":
                     return None
-                self._printMenu()
+                self._print_menu()
         finally:
             if self.clearOnExit:
                 ansi.clear_line()
@@ -75,6 +88,14 @@ class Menu(object):
             ansi.show_cursor()
 
 class VerticalMenu(object):
+    """
+    An interactive vertical menu to be used in console scripts.
+
+    Example:
+        menu = VerticalMenu("Select: ", ["item one", "item two", "item three"])
+        result = menu.show()
+        print result
+    """
     def __init__(self, header, options, default=0, clearOnExit=True):
         self.header = header
         self.options = options
@@ -86,7 +107,7 @@ class VerticalMenu(object):
         sys.stdout.write(data)
         sys.stdout.flush()
 
-    def _printSelected(self, highlighted):
+    def _print_selected(self, highlighted):
         ansi.restore_position()
         moveUp = len(self.options)-self.selected-1
         if moveUp:
@@ -101,23 +122,27 @@ class VerticalMenu(object):
         ansi.restore_position()
 
     def show(self):
+        """
+        Show the menu and run the keyboard loop. The return value is the text of the chosen option
+        if Enter was pressed and None is Esc was pressed.
+        """
         self._print(ansi.colorize(self.header, "white", bright=True) + "\n")
         ansi.hide_cursor()
         for option in self.options[:-1]:
             self._print(" " + option + "\n")
         self._print(" " + self.options[-1] + "\r")
         ansi.save_position()
-        self._printSelected(True)
+        self._print_selected(True)
         try:
             for key in keyboard.keyboard_listener():
                 if key == "down":
-                    self._printSelected(highlighted=False)
+                    self._print_selected(highlighted=False)
                     self.selected = (self.selected + 1) % len(self.options)
-                    self._printSelected(highlighted=True)
+                    self._print_selected(highlighted=True)
                 elif key == "up":
-                    self._printSelected(highlighted=False)
+                    self._print_selected(highlighted=False)
                     self.selected = (self.selected + len(self.options) - 1) % len(self.options)
-                    self._printSelected(highlighted=True)
+                    self._print_selected(highlighted=True)
                 elif key == "enter":
                     return self.options[self.selected]
                 elif key == "esc":
@@ -133,8 +158,8 @@ class VerticalMenu(object):
                 ansi.up(lines-1)
             ansi.show_cursor()
 
-def show_menu(header, options, default=0, clearOnExit=True, separator="  "):
-    menu = Menu(header, options, default, clearOnExit, separator)
+def show_menu(header, options, default=0, clearOnExit=True):
+    menu = Menu(header, options, default, clearOnExit)
     return menu.show()
 
 def show_vertical_menu(header, options, default=0, clearOnExit=True):
