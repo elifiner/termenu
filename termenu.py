@@ -1,13 +1,6 @@
 import sys
+import ansi
 import keyboard
-
-class Ansi(object):
-    startSelected = "\x1b[0;47;30m"
-    startHeader = '\x1b[1;37m'
-    endHighlight = "\x1b[m"
-    hideCursor = "\x1b[?25l"
-    showCursor = "\x1b[?25h"
-    clearLine = "\x1b[2K"
 
 # Get the size of the current terminal
 # (http://stackoverflow.com/questions/566746/how-to-get-console-window-width-in-python)
@@ -36,15 +29,15 @@ class Menu(object):
     def _printMenu(self):
         [(first, last)] = [(start, end) for start, end in self.slices() if start <= self.selected < end]
         optionsCopy = list(self.options)
-        optionsCopy[self.selected] = Ansi.startSelected + optionsCopy[self.selected] + Ansi.endHighlight
+        optionsCopy[self.selected] = ansi.colorize(optionsCopy[self.selected], "black", "white")
         optionsStr = self.separator.join(optionsCopy[first:last])
         if first > 0:
             optionsStr = "< " + optionsStr
         if last < len(self.options):
             optionsStr = optionsStr + " >"
-        self._print(Ansi.clearLine + "\r")
-        self._print(Ansi.startHeader + self.header + Ansi.endHighlight + optionsStr)
-        sys.stdout.flush()
+        ansi.clearline()
+        self._print("\r")
+        self._print(ansi.colorize(self.header, "white", bright=True) + optionsStr)
 
     def _paginate(self, options, maxWidth):
         slices = []
@@ -60,7 +53,7 @@ class Menu(object):
         return slices
 
     def show(self):
-        self._print(Ansi.hideCursor)
+        ansi.hidecur()
         try:
             self._printMenu()
             for key in keyboard.keyboard_listener():
@@ -75,10 +68,11 @@ class Menu(object):
                 self._printMenu()
         finally:
             if self.clearOnExit:
-                self._print(Ansi.clearLine + "\r")
+                ansi.clearline()
+                self._print("\r")
             else:
                 self._print("\n")
-            self._print(Ansi.showCursor)
+            ansi.showcur()
 
 def show_menu(header, options, default=0, clearOnExit=False, separator="  "):
     menu = Menu(header, options, default, clearOnExit, separator)
