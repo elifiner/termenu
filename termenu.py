@@ -96,30 +96,40 @@ class VerticalMenu(object):
         result = menu.show()
         print result
     """
-    def __init__(self, header, options, default=0, clearOnExit=True):
+    def __init__(self, header, options, default=0, clearOnExit=True, height=None):
         self.header = header
         self.options = options
         self.selected = max(0, default % len(self.options))
         self.width = max(len(option) for option in self.options)
         self.clearOnExit = clearOnExit
+        maxHeight = get_terminal_size()[1]-2
+        if not height or height > maxHeight:
+            height = maxHeight
+        self.height = min(len(options), height)
+        self.first = self.selected - self.selected % self.height
 
     def _print(self, data):
         sys.stdout.write(data)
         sys.stdout.flush()
 
-    def _print_selected(self, highlighted):
-        ansi.restore_position()
-        moveUp = len(self.options)-self.selected-1
-        if moveUp:
-            ansi.up(moveUp)
-        option = self.options[self.selected]
-        option += " " * (self.width - len(option))
-        option = " %s " % option
-        if highlighted:
-            self._print(ansi.colorize(option, "black", "white"))
-        else:
-            self._print(option)
-        ansi.restore_position()
+    def _print_menu(self, redraw=False):
+        if redraw:
+            ansi.restore_position() # go to bottom of menu
+            ansi.up(self.height) # go to top of menu
+        options = self.options[self.first:self.first+self.height]
+        options += [""] * (self.height - len(options))
+        for i, option in enumerate(options):
+            if i == 0 and self.first != 0:
+                marker = ansi.colorize("^ ", "white", bright=True)
+            elif i == self.height-1 and self.first + self.height < len(self.options):
+                marker = ansi.colorize("v ", "white", bright=True)
+            else:
+                marker = "  "
+            line = option + " " * (self.width - len(option))
+            if self.first + i == self.selected:
+                line = ansi.colorize(line, "black", "white")
+            line = marker + line + "\n"
+            self._print(line)
 
     def show(self):
         """
@@ -127,49 +137,59 @@ class VerticalMenu(object):
         if Enter was pressed and None is Esc was pressed.
         """
         self._print(ansi.colorize(self.header, "white", bright=True) + "\n")
+        self._print_menu(False)
+        ansi.save_position() # save bottom-of-menu position for future reference
         ansi.hide_cursor()
-        for option in self.options[:-1]:
-            self._print(" " + option + "\n")
-        self._print(" " + self.options[-1] + "\r")
-        ansi.save_position()
-        self._print_selected(True)
         try:
             for key in keyboard.keyboard_listener():
                 if key == "down":
-                    self._print_selected(highlighted=False)
                     self.selected = (self.selected + 1) % len(self.options)
-                    self._print_selected(highlighted=True)
                 elif key == "up":
-                    self._print_selected(highlighted=False)
                     self.selected = (self.selected + len(self.options) - 1) % len(self.options)
-                    self._print_selected(highlighted=True)
+                elif key == "pageDown":
+                    if self.selected % self.height < self.height-1:
+                        self.selected = self.selected - self.selected % self.height + self.height - 1
+                    else:
+                        self.selected += self.height
+                    if self.selected > len(self.options)-1:
+                        self.selected = len(self.options)-1
+                elif key == "pageUp":
+                    if self.selected % self.height > 0:
+                        self.selected = self.selected - self.selected % self.height
+                    else:
+                        self.selected -= self.height
+                        if self.selected < 0:
+                            self. selected = 0
+                elif key == "home":
+                    self.selected = 0
+                elif key == "end":
+                    self.selected = len(self.options)-1
                 elif key == "enter":
                     return self.options[self.selected]
                 elif key == "esc":
                     return None
+                self.first = self.selected - self.selected % self.height
+                self._print_menu(True)
         finally:
-            ansi.restore_position()
             if self.clearOnExit:
-                lines = len(self.options) + 1
-                ansi.up(lines)
-                for i in xrange(lines):
-                    ansi.down()
+                ansi.restore_position()
+                ansi.up(self.height+1)
+                for i in xrange(self.height+1):
                     ansi.clear_line()
-                ansi.up(lines-1)
+                    ansi.down()
+                ansi.up(self.height+1)
             ansi.show_cursor()
 
 def show_menu(header, options, default=0, clearOnExit=True):
     menu = Menu(header, options, default, clearOnExit)
     return menu.show()
 
-def show_vertical_menu(header, options, default=0, clearOnExit=True):
-    menu = VerticalMenu(header, options, default, clearOnExit)
+def show_vertical_menu(header, options, default=0, clearOnExit=True, height=None):
+    menu = VerticalMenu(header, options, default, clearOnExit, height)
     return menu.show()
     
 if __name__ == "__main__":
     import __builtin__
-    builtin = show_menu("Show help for: ", sorted(dir(__builtin__), key=lambda v: v.lower()), clearOnExit=True)
-#~     builtin = show_vertical_menu("Show help for:", list(sorted(dir(__builtin__), key=lambda v: v.lower()))[10:30])
+    builtin = show_vertical_menu("Show help for: ", sorted(dir(__builtin__), key=lambda v: v.lower()), clearOnExit=True, height=20)
     if builtin:
-#~         print builtin
-        help(getattr(__builtin__, builtin))
+        print builtin
