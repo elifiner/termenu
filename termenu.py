@@ -143,23 +143,19 @@ class VerticalMenu(object):
         try:
             for key in keyboard.keyboard_listener():
                 if key == "down":
-                    self.selected = (self.selected + 1) % len(self.options)
+                    self.selected += 1
                 elif key == "up":
-                    self.selected = (self.selected + len(self.options) - 1) % len(self.options)
+                    self.selected -= 1
                 elif key == "pageDown":
                     if self.selected % self.height < self.height-1:
                         self.selected = self.selected - self.selected % self.height + self.height - 1
                     else:
                         self.selected += self.height
-                    if self.selected > len(self.options)-1:
-                        self.selected = len(self.options)-1
                 elif key == "pageUp":
                     if self.selected % self.height > 0:
                         self.selected = self.selected - self.selected % self.height
                     else:
                         self.selected -= self.height
-                        if self.selected < 0:
-                            self. selected = 0
                 elif key == "home":
                     self.selected = 0
                 elif key == "end":
@@ -168,6 +164,10 @@ class VerticalMenu(object):
                     return self.options[self.selected]
                 elif key == "esc":
                     return None
+                if self.selected < 0:
+                    self. selected = 0
+                if self.selected > len(self.options)-1:
+                    self.selected = len(self.options)-1
                 self.first = self.selected - self.selected % self.height
                 self._print_menu(True)
         finally:
