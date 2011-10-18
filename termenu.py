@@ -53,7 +53,7 @@ class Menu(object):
         return slices
 
     def show(self):
-        ansi.hidecur()
+        ansi.hide_cursor()
         try:
             self._printMenu()
             for key in keyboard.keyboard_listener():
@@ -72,14 +72,71 @@ class Menu(object):
                 self._print("\r")
             else:
                 self._print("\n")
-            ansi.showcur()
+            ansi.show_cursor()
+
+class VerticalMenu(object):
+    def __init__(self, header, options, default=0):
+        self.header = header
+        self.options = options
+        self.selected = max(0, default % len(self.options))
+        self.width = max(len(option) for option in self.options)
+
+    def _print(self, data):
+        sys.stdout.write(data)
+        sys.stdout.flush()
+
+    def _printSelected(self, highlighted):
+        ansi.restore_position()
+        moveUp = len(self.options)-self.selected-1
+        if moveUp:
+            ansi.up(moveUp)
+        option = self.options[self.selected]
+        option += " " * (self.width - len(option))
+        option = " %s " % option
+        if highlighted:
+            self._print(ansi.colorize(option, "black", "white"))
+        else:
+            self._print(option)
+        ansi.restore_position()
+
+    def show(self):
+        self._print(ansi.colorize(self.header, "white", bright=True) + "\n")
+        ansi.hide_cursor()
+        for option in self.options[:-1]:
+            self._print(" " + option + "\n")
+        self._print(" " + self.options[-1] + "\r")
+        ansi.save_position()
+        self._printSelected(True)
+        try:
+            for key in keyboard.keyboard_listener():
+                if key == "down":
+                    self._printSelected(highlighted=False)
+                    self.selected = (self.selected + 1) % len(self.options)
+                    self._printSelected(highlighted=True)
+                elif key == "up":
+                    self._printSelected(highlighted=False)
+                    self.selected = (self.selected + len(self.options) - 1) % len(self.options)
+                    self._printSelected(highlighted=True)
+                elif key == "enter":
+                    return self.options[self.selected]
+                elif key == "esc":
+                    return None
+        finally:
+            ansi.restore_position()
+            ansi.show_cursor()
 
 def show_menu(header, options, default=0, clearOnExit=False, separator="  "):
     menu = Menu(header, options, default, clearOnExit, separator)
+    return menu.show()
+
+def show_vertical_menu(options, default=0):
+    menu = VerticalMenu(options, default)
     return menu.show()
     
 if __name__ == "__main__":
     import __builtin__
     builtin = show_menu("Show help for: ", sorted(dir(__builtin__), key=lambda v: v.lower()), clearOnExit=True)
+#~     builtin = show_vertical_menu("Show help for:", list(sorted(dir(__builtin__), key=lambda v: v.lower()))[10:30])
     if builtin:
+#~         print builtin
         help(getattr(__builtin__, builtin))

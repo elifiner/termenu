@@ -18,6 +18,9 @@ def forward(n=1):
 def back(n=1):
     _print("\x1b[%dD" % n)
 
+def move_horizontal(column=1):
+    _print("\x1b[%dG" % column)
+
 def move(row, column):
     _print("\x1b[%d;%dH" % (row, column))
 
@@ -27,16 +30,16 @@ def clearscreen():
 def clearline():
     _print("\x1b[2K")
 
-def savepos():
+def save_position():
     _print("\x1b[s")
 
-def restorepos():
+def restore_position():
     _print("\x1b[u")
 
-def hidecur():
+def hide_cursor():
     _print("\x1b[?25l")
 
-def showcur():
+def show_cursor():
     _print("\x1b[?25h")
 
 def colorize(string, color, background=None, bright=False):
