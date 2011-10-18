@@ -13,7 +13,7 @@ def get_terminal_size():
 
 class Menu(object):
     MARGIN = 5
-    def __init__(self, header, options, default=0, clearOnExit=False, separator="  "):
+    def __init__(self, header, options, default=0, clearOnExit=True, separator="  "):
         self.header = header
         self.options = list(options)
         self.default = default
@@ -35,7 +35,7 @@ class Menu(object):
             optionsStr = "< " + optionsStr
         if last < len(self.options):
             optionsStr = optionsStr + " >"
-        ansi.clearline()
+        ansi.clear_line()
         self._print("\r")
         self._print(ansi.colorize(self.header, "white", bright=True) + optionsStr)
 
@@ -68,18 +68,19 @@ class Menu(object):
                 self._printMenu()
         finally:
             if self.clearOnExit:
-                ansi.clearline()
+                ansi.clear_line()
                 self._print("\r")
             else:
                 self._print("\n")
             ansi.show_cursor()
 
 class VerticalMenu(object):
-    def __init__(self, header, options, default=0):
+    def __init__(self, header, options, default=0, clearOnExit=True):
         self.header = header
         self.options = options
         self.selected = max(0, default % len(self.options))
         self.width = max(len(option) for option in self.options)
+        self.clearOnExit = clearOnExit
 
     def _print(self, data):
         sys.stdout.write(data)
@@ -123,14 +124,21 @@ class VerticalMenu(object):
                     return None
         finally:
             ansi.restore_position()
+            if self.clearOnExit:
+                lines = len(self.options) + 1
+                ansi.up(lines)
+                for i in xrange(lines):
+                    ansi.down()
+                    ansi.clear_line()
+                ansi.up(lines-1)
             ansi.show_cursor()
 
-def show_menu(header, options, default=0, clearOnExit=False, separator="  "):
+def show_menu(header, options, default=0, clearOnExit=True, separator="  "):
     menu = Menu(header, options, default, clearOnExit, separator)
     return menu.show()
 
-def show_vertical_menu(header, options, default=0):
-    menu = VerticalMenu(header, options, default)
+def show_vertical_menu(header, options, default=0, clearOnExit=True):
+    menu = VerticalMenu(header, options, default, clearOnExit)
     return menu.show()
     
 if __name__ == "__main__":

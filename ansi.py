@@ -24,10 +24,10 @@ def move_horizontal(column=1):
 def move(row, column):
     _print("\x1b[%d;%dH" % (row, column))
 
-def clearscreen():
+def clear_screen():
     _print("\x1b[2J")
 
-def clearline():
+def clear_line():
     _print("\x1b[2K")
 
 def save_position():
