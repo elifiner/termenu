@@ -129,8 +129,8 @@ def show_menu(header, options, default=0, clearOnExit=False, separator="  "):
     menu = Menu(header, options, default, clearOnExit, separator)
     return menu.show()
 
-def show_vertical_menu(options, default=0):
-    menu = VerticalMenu(options, default)
+def show_vertical_menu(header, options, default=0):
+    menu = VerticalMenu(header, options, default)
     return menu.show()
     
 if __name__ == "__main__":
