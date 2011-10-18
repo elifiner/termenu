@@ -192,4 +192,4 @@ if __name__ == "__main__":
     import __builtin__
     builtin = show_vertical_menu("Show help for: ", sorted(dir(__builtin__), key=lambda v: v.lower()), clearOnExit=True, height=20)
     if builtin:
-        print builtin
+        help(builtin)
