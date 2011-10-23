@@ -1,0 +1,7 @@
+Tasks
+=====
+
+* Create a README file that describes the project
+* Create a setup.py file so that it can be installed
+* Create a frontend so that termenus could be used from BASH scripts (and not only Python)
+* Upload termenu to PyPI
