@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import os
 import sys
 import fcntl
@@ -34,7 +36,7 @@ ANSI_SEQUENCES = dict(
 
 KEY_NAMES = dict((v,k) for k,v in ANSI_SEQUENCES.items())
 KEY_NAMES.update({
-    '\x1b' : 'esc', 
+    '\x1b' : 'esc',
     '\n' : 'enter'
 })
 
