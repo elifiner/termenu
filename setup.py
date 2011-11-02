@@ -33,8 +33,8 @@ setup(
     license='GPL',
     author_email='eli.golovinsky@gmail.com',
     url='http://pypi.python.org/pypi/termenu',
-    py_modules=['termenu', 'ansi', 'keyboard'],
-    scripts=['termenu'],
+    packages=['termenu'],
+    scripts=['termenu/termenu'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
