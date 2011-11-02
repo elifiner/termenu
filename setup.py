@@ -26,13 +26,13 @@ Menus can be vertical (multi-line) or one-line.
 
 setup(
     name='termenu',
-    version='0.1',
+    version='0.1.1',
     description='Interactive in-line menus for Unix-based terminals',
     long_description=DESCRIPTION,
     author='Eli GOlovinsky',
     license='GPL',
     author_email='eli.golovinsky@gmail.com',
-    url='http://pypi.python.org/pypi/termenu',
+    url='https://github.com/gooli/termenu',
     packages=['termenu'],
     scripts=['termenu/termenu'],
     classifiers=[
