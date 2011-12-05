@@ -26,10 +26,10 @@ Menus can be vertical (multi-line) or one-line.
 
 setup(
     name='termenu',
-    version='0.1.1',
+    version='0.1.2',
     description='Interactive in-line menus for Unix-based terminals',
     long_description=DESCRIPTION,
-    author='Eli GOlovinsky',
+    author='Eli Golovinsky',
     license='GPL',
     author_email='eli.golovinsky@gmail.com',
     url='https://github.com/gooli/termenu',
