@@ -34,6 +34,7 @@ Examples:
     parser.add_option("-t", "--title", dest="title", help="A title for the menu", default="")
     parser.add_option("-d", "--default", dest="default", help="Default item to select", metavar="OPTION")
     parser.add_option("-l", "--lines", dest="lines", type="int", help="Max lines for vertical menu", metavar="LINES", default=20)
+    parser.add_option("-o", "--one", dest="one", action="store_true", help="Don't show a menu if only one option was given")
     (options, args) = parser.parse_args()
 
     if options.help:
@@ -55,10 +56,13 @@ Examples:
     if not items:
         parser.error("no menu items provided")
 
-    if options.vertical:
-        result = termenu.show_vertical_menu(options.title, items, default=options.default, height=options.lines)
+    if options.one and len(items) == 1:
+        result = items[0]
     else:
-        result = termenu.show_menu(options.title, items, default=options.default)
+        if options.vertical:
+            result = termenu.show_vertical_menu(options.title, items, default=options.default, height=options.lines)
+        else:
+            result = termenu.show_menu(options.title, items, default=options.default)
 
     if result:
         redirectedStdout.write(result + "\n")
