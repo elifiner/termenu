@@ -12,91 +12,6 @@ def get_terminal_size():
 
 class Menu(object):
     """
-    An interactive one line menu to be used in console scripts.
-
-    Example:
-        menu = Menu("Select: ", ["item one", "item two", "item three"])
-        result = menu.show()
-        print result
-    """
-
-    MARGIN = 5
-    def __init__(self, title, options, default=None, clearOnExit=True, separator="  "):
-        self.title = title
-        self.options = list(options)
-        if default is None:
-            default = 0
-        elif isinstance(default, str):
-            try:
-                default = options.index(default)
-            except ValueError:
-                default = 0
-        self.clearOnExit = clearOnExit
-        self.separator = separator
-        self.selected = max(0, default % len(self.options))
-        self.slices = lambda: self._paginate(options, get_terminal_size()[0])
-
-    def _print(self, data):
-        sys.stdout.write(data)
-        sys.stdout.flush()
-
-    def _print_menu(self):
-        [(first, last)] = [(start, end) for start, end in self.slices() if start <= self.selected < end]
-        optionsCopy = list(self.options)
-        optionsCopy[self.selected] = ansi.colorize(optionsCopy[self.selected], "black", "white")
-        optionsStr = self.separator.join(optionsCopy[first:last])
-        if first > 0:
-            optionsStr = ansi.colorize("< ", "white", bright=True) + optionsStr
-        if last < len(self.options):
-            optionsStr = optionsStr + ansi.colorize(" >", "white", bright=True)
-        ansi.clear_line()
-        self._print("\r")
-        self._print(ansi.colorize(self.title, "white", bright=True) + optionsStr)
-
-    def _paginate(self, options, maxWidth):
-        slices = []
-        start = 0
-        contents = []
-        for i, option in enumerate(options):
-            contents.append(option)
-            if len(self.title) + len(self.separator.join(contents)) + self.MARGIN > maxWidth:
-                slices.append((start, i))
-                start = i
-                contents = [option]
-        slices.append((start, len(options)))
-        return slices
-
-    def show(self):
-        """
-        Show the menu and run the keyboard loop. The return value is the text of the chosen option
-        if Enter was pressed and None is Esc was pressed.
-        """
-        import keyboard
-        ansi.hide_cursor()
-        try:
-            self._print_menu()
-            for key in keyboard.keyboard_listener():
-                if key == "right":
-                    if self.selected < len(self.options)-1:
-                        self.selected += 1
-                elif key == "left":
-                    if self.selected > 0:
-                        self.selected -= 1
-                elif key == "enter":
-                    return self.options[self.selected]
-                elif key == "esc":
-                    return None
-                self._print_menu()
-        finally:
-            if self.clearOnExit:
-                ansi.clear_line()
-                self._print("\r")
-            else:
-                self._print("\n")
-            ansi.show_cursor()
-
-class VerticalMenu(object):
-    """
     An interactive vertical menu to be used in console scripts.
 
     Example:
@@ -104,7 +19,7 @@ class VerticalMenu(object):
         result = menu.show()
         print result
     """
-    def __init__(self, title, options, default=None, clearOnExit=True, height=None):
+    def __init__(self, title, options, default=None, clearOnExit=True, height=None, multiSelect=False):
         self.title = title
         self.options = options
         if default is None:
@@ -122,6 +37,9 @@ class VerticalMenu(object):
             height = maxHeight
         self.height = min(len(options), height)
         self.first = self.selected - self.selected % self.height
+        self.multiSelect = multiSelect
+        if multiSelect:
+            self.selectedItems = set()
 
     def _print(self, data):
         sys.stdout.write(data)
@@ -135,14 +53,21 @@ class VerticalMenu(object):
         options += [""] * (self.height - len(options))
         for i, option in enumerate(options):
             if i == 0 and self.first != 0:
-                marker = ansi.colorize("^ ", "white", bright=True)
+                marker = ansi.colorize("^", "white", bright=True)
             elif i == self.height-1 and self.first + self.height < len(self.options):
-                marker = ansi.colorize("v ", "white", bright=True)
+                marker = ansi.colorize("v", "white", bright=True)
             else:
-                marker = "  "
+                marker = " "
+            multiSelected = self.multiSelect and (self.first + i) in self.selectedItems
+            marker += "* " if multiSelected else "  "
             line = option + " " * (self.width - len(option))
             if self.first + i == self.selected:
-                line = ansi.colorize(line, "black", "white")
+                if multiSelected:
+                    line = ansi.colorize(line, "red", "white")
+                else:
+                    line = ansi.colorize(line, "black", "white")
+            elif multiSelected:
+                    line = ansi.colorize(line, "red")
             line = marker + line + "\n"
             self._print(line)
 
@@ -178,11 +103,22 @@ class VerticalMenu(object):
                 elif key == "end":
                     self.selected = len(self.options)-1
                 elif key == "enter":
-                    return self.options[self.selected]
+                    if self.multiSelect:
+                        if not self.selectedItems:
+                            self.selectedItems.add(self.selected)
+                        return [self.options[i] for i in sorted(self.selectedItems)]
+                    else:
+                        return self.options[self.selected]
                 elif key == "esc":
                     return None
+                elif key == " ":
+                    if self.multiSelect:
+                        if self.selected in self.selectedItems:
+                            self.selectedItems.remove(self.selected)
+                        else:
+                            self.selectedItems.add(self.selected)
                 if self.selected < 0:
-                    self. selected = 0
+                    self.selected = 0
                 if self.selected > len(self.options)-1:
                     self.selected = len(self.options)-1
                 self.first = self.selected - self.selected % self.height
@@ -199,11 +135,9 @@ class VerticalMenu(object):
                     ansi.down()
                 ansi.up(lines)
             ansi.show_cursor()
+VerticalMenu = Menu
 
-def show_menu(title, options, default=None, clearOnExit=True):
-    menu = Menu(title, options, default, clearOnExit)
+def show_menu(title, options, default=None, clearOnExit=True, height=None, multiSelect=False):
+    menu = Menu(title, options, default, clearOnExit, height, multiSelect)
     return menu.show()
-
-def show_vertical_menu(title, options, default=None, clearOnExit=True, height=None):
-    menu = VerticalMenu(title, options, default, clearOnExit, height)
-    return menu.show()
+show_vertical_menu = show_menu

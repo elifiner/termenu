@@ -22,19 +22,18 @@ via STDIN (if no arguments were given) or a file (using -f).
 Menus can be vertical (multi-line) or one-line.
 
 Examples:
-    termenu.py Abort Retry Fail
-    ls | termenu.py -
+    termenu Abort Retry Fail
+    ls | termenu
     termenu.py -f file_with_options.txt
 """
     parser = OptionParser(usage="Usage: %prog [items]", description=description, formatter=MyHelpFormatter(), add_help_option=False)
-    parser.add_option("--help", dest="help", help="Show help message", action="store_true", default=False)
-    parser.add_option("-f", "--file", dest="file", help="Take menu items from a file", metavar="FILE")
-    parser.add_option("-v", "--vertical", dest="vertical", help="Display a vertical menu", action="store_true", default=True)
-    parser.add_option("-h", "--horizontal", dest="vertical", help="Display a horizontal menu", action="store_false")
-    parser.add_option("-t", "--title", dest="title", help="A title for the menu", default="")
-    parser.add_option("-d", "--default", dest="default", help="Default item to select", metavar="OPTION")
-    parser.add_option("-l", "--lines", dest="lines", type="int", help="Max lines for vertical menu", metavar="LINES", default=20)
-    parser.add_option("-o", "--one", dest="one", action="store_true", help="Don't show a menu if only one option was given")
+    parser.add_option("--help", help="Show help message", action="store_true", default=False)
+    parser.add_option("-f", "--file", help="Take menu items from a file", metavar="FILE")
+    parser.add_option("-t", "--title", help="A title for the menu", default="")
+    parser.add_option("-d", "--default", help="Default item to select", metavar="OPTION")
+    parser.add_option("-l", "--lines", type="int", help="Max lines for vertical menu", metavar="LINES", default=20)
+    parser.add_option("-o", "--one", action="store_true", help="Don't show a menu if only one option was given")
+    parser.add_option("-m", "--multi-select", dest="multiSelect", action="store_true", help="Allow multiple selection via <Space> key")
     (options, args) = parser.parse_args()
 
     if options.help:
@@ -59,13 +58,13 @@ Examples:
     if options.one and len(items) == 1:
         result = items[0]
     else:
-        if options.vertical:
-            result = termenu.show_vertical_menu(options.title, items, default=options.default, height=options.lines)
-        else:
-            result = termenu.show_menu(options.title, items, default=options.default)
+        result = termenu.show_menu(options.title, items, default=options.default, height=options.lines, multiSelect=options.multiSelect)
 
     if result:
-        redirectedStdout.write(result + "\n")
+        if options.multiSelect:
+            redirectedStdout.write("\n".join(result) + "\n")
+        else:
+            redirectedStdout.write(result + "\n")
 
 if __name__ == "__main__":
     main()
