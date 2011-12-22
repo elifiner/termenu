@@ -19,16 +19,10 @@ class Menu(object):
         result = menu.show()
         print result
     """
-    def __init__(self, title, options, default=None, height=None, multiSelect=False):
+    def __init__(self, title, options, default=None, height=None):
         self.title = title
         self.options = options
-        if default is None:
-            default = 0
-        elif isinstance(default, str):
-            try:
-                default = options.index(default)
-            except ValueError:
-                default = 0
+        default = self._compute_default(default)
         self.selected = max(0, default % len(self.options))
         self.width = max(len(option) for option in self.options)
         maxHeight = get_terminal_size()[1]-2
@@ -36,10 +30,17 @@ class Menu(object):
             height = maxHeight
         self.height = min(len(options), height)
         self.first = self.selected - self.selected % self.height
-        self.multiSelect = multiSelect
-        if multiSelect:
-            self.selectedItems = set()
         self.result = None
+
+    def _compute_default(self, default):
+        if default is None:
+            default = 0
+        else:
+            try:
+                default = self.options.index(default)
+            except ValueError:
+                default = 0
+        return default
 
     def _print(self, data):
         sys.stdout.write(data)
@@ -47,7 +48,7 @@ class Menu(object):
 
     def _print_menu(self, redraw=False):
         if redraw:
-            ansi.restore_position() # go to bottom of menu
+            ansi.restore_position() # go to bottom of menu (see ansi.save_position)
             ansi.up(self.height) # go to top of menu
         page = self.options[self.first:self.first+self.height]
         page += [""] * (self.height - len(page))
@@ -62,14 +63,8 @@ class Menu(object):
         return line
 
     def _colorize_line(self, index, line):
-        multiSelected = self._is_multi_selected(index)
         if self.first + index == self.selected:
-            if multiSelected:
-                line = ansi.colorize(line, "red", "white")
-            else:
-                line = ansi.colorize(line, "black", "white")
-        elif multiSelected:
-                line = ansi.colorize(line, "red")
+            line = ansi.colorize(line, "black", "white")
         return line
 
     def _build_marker(self, index):
@@ -79,11 +74,7 @@ class Menu(object):
             marker = ansi.colorize("v", "white", bright=True)
         else:
             marker = " "
-        marker += "* " if self._is_multi_selected(index) else "  "
         return marker
-
-    def _is_multi_selected(self, index):
-        return self.multiSelect and (self.first + index) in self.selectedItems
 
     def _on_down(self):
         self.selected += 1
@@ -116,24 +107,12 @@ class Menu(object):
         self._adjust_selected()
 
     def _on_enter(self):
-        if self.multiSelect:
-            if not self.selectedItems:
-                self.selectedItems.add(self.selected)
-            self.result = [self.options[i] for i in sorted(self.selectedItems)]
-        else:
-            self.result = self.options[self.selected]
+        self.result = self.options[self.selected]
         return True
 
     def _on_esc(self):
         self.result = None
         return True
-
-    def _on_space(self):
-        if self.multiSelect:
-            if self.selected in self.selectedItems:
-                self.selectedItems.remove(self.selected)
-            else:
-                self.selectedItems.add(self.selected)
 
     def _adjust_selected(self):
         if self.selected < 0:
@@ -173,14 +152,46 @@ class Menu(object):
             ansi.up(lines)
             ansi.show_cursor()
 
-class MultiSelect(object):
-    def __init__(self):
+class MultiSelectMenu(Menu):
+    def __init__(self, *args, **kwargs):
+        super(MultiSelectMenu, self).__init__(*args, **kwargs)
         self.selectedItems = set()
 
-class MultiSelectMenu(MultiSelect, Menu):
-    pass
+    def _build_marker(self, index):
+        marker = super(MultiSelectMenu, self)._build_marker(index)
+        marker += "* " if self._is_multi_selected(index) else "  "
+        return marker
+
+    def _colorize_line(self, index, line):
+        multiSelected = self._is_multi_selected(index)
+        if self.first + index == self.selected:
+            if multiSelected:
+                line = ansi.colorize(line, "red", "white")
+            else:
+                line = ansi.colorize(line, "black", "white")
+        elif multiSelected:
+                line = ansi.colorize(line, "red")
+        return line
+
+    def _is_multi_selected(self, index):
+        return (self.first + index) in self.selectedItems
+
+    def _on_enter(self):
+        if not self.selectedItems:
+            self.selectedItems.add(self.selected)
+        self.result = [self.options[i] for i in sorted(self.selectedItems)]
+        return True
+
+    def _on_space(self):
+        if self.selected in self.selectedItems:
+            self.selectedItems.remove(self.selected)
+        else:
+            self.selectedItems.add(self.selected)
 
 def show_menu(title, options, default=None, height=None, multiSelect=False):
-    menu = Menu(title, options, default, height, multiSelect)
+    if multiSelect:
+        klass = MultiSelectMenu
+    else:
+        klass = Menu
+    menu = klass(title, options, default, height)
     return menu.show()
-show_menu
