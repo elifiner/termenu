@@ -15,7 +15,7 @@ class Menu(object):
     An interactive vertical menu to be used in console scripts.
 
     Example:
-        menu = VerticalMenu("Select: ", ["item one", "item two", "item three"])
+        menu = Menu("Select: ", ["item one", "item two", "item three"])
         result = menu.show()
         print result
     """
@@ -39,6 +39,7 @@ class Menu(object):
         self.multiSelect = multiSelect
         if multiSelect:
             self.selectedItems = set()
+        self.result = None
 
     def _print(self, data):
         sys.stdout.write(data)
@@ -84,6 +85,63 @@ class Menu(object):
     def _is_multi_selected(self, index):
         return self.multiSelect and (self.first + index) in self.selectedItems
 
+    def _on_down(self):
+        self.selected += 1
+        self._adjust_selected()
+
+    def _on_up(self):
+        self.selected -= 1
+        self._adjust_selected()
+
+    def _on_pageDown(self):
+        if self.selected % self.height < self.height-1:
+            self.selected = self.selected - self.selected % self.height + self.height - 1
+        else:
+            self.selected += self.height
+        self._adjust_selected()
+
+    def _on_pageUp(self):
+        if self.selected % self.height > 0:
+            self.selected = self.selected - self.selected % self.height
+        else:
+            self.selected -= self.height
+        self._adjust_selected()
+
+    def _on_home(self):
+        self.selected = 0
+        self._adjust_selected()
+
+    def _on_end(self):
+        self.selected = len(self.options)-1
+        self._adjust_selected()
+
+    def _on_enter(self):
+        if self.multiSelect:
+            if not self.selectedItems:
+                self.selectedItems.add(self.selected)
+            self.result = [self.options[i] for i in sorted(self.selectedItems)]
+        else:
+            self.result = self.options[self.selected]
+        return True
+
+    def _on_esc(self):
+        self.result = None
+        return True
+
+    def _on_space(self):
+        if self.multiSelect:
+            if self.selected in self.selectedItems:
+                self.selectedItems.remove(self.selected)
+            else:
+                self.selectedItems.add(self.selected)
+
+    def _adjust_selected(self):
+        if self.selected < 0:
+            self.selected = 0
+        if self.selected > len(self.options)-1:
+            self.selected = len(self.options)-1
+        self.first = self.selected - self.selected % self.height
+
     def show(self):
         """
         Show the menu and run the keyboard loop. The return value is the text of the chosen option
@@ -97,44 +155,11 @@ class Menu(object):
         ansi.hide_cursor()
         try:
             for key in keyboard.keyboard_listener():
-                if key == "down":
-                    self.selected += 1
-                elif key == "up":
-                    self.selected -= 1
-                elif key == "pageDown":
-                    if self.selected % self.height < self.height-1:
-                        self.selected = self.selected - self.selected % self.height + self.height - 1
-                    else:
-                        self.selected += self.height
-                elif key == "pageUp":
-                    if self.selected % self.height > 0:
-                        self.selected = self.selected - self.selected % self.height
-                    else:
-                        self.selected -= self.height
-                elif key == "home":
-                    self.selected = 0
-                elif key == "end":
-                    self.selected = len(self.options)-1
-                elif key == "enter":
-                    if self.multiSelect:
-                        if not self.selectedItems:
-                            self.selectedItems.add(self.selected)
-                        return [self.options[i] for i in sorted(self.selectedItems)]
-                    else:
-                        return self.options[self.selected]
-                elif key == "esc":
-                    return None
-                elif key == "space":
-                    if self.multiSelect:
-                        if self.selected in self.selectedItems:
-                            self.selectedItems.remove(self.selected)
-                        else:
-                            self.selectedItems.add(self.selected)
-                if self.selected < 0:
-                    self.selected = 0
-                if self.selected > len(self.options)-1:
-                    self.selected = len(self.options)-1
-                self.first = self.selected - self.selected % self.height
+                handler = "_on_" + key
+                if hasattr(self, handler):
+                    ret = getattr(self, handler)()
+                    if ret:
+                        return self.result
                 self._print_menu(True)
         finally:
             ansi.restore_position()
