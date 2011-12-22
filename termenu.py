@@ -19,7 +19,7 @@ class Menu(object):
         result = menu.show()
         print result
     """
-    def __init__(self, title, options, default=None, clearOnExit=True, height=None, multiSelect=False):
+    def __init__(self, title, options, default=None, height=None, multiSelect=False):
         self.title = title
         self.options = options
         if default is None:
@@ -31,7 +31,6 @@ class Menu(object):
                 default = 0
         self.selected = max(0, default % len(self.options))
         self.width = max(len(option) for option in self.options)
-        self.clearOnExit = clearOnExit
         maxHeight = get_terminal_size()[1]-2
         if not height or height > maxHeight:
             height = maxHeight
@@ -49,27 +48,41 @@ class Menu(object):
         if redraw:
             ansi.restore_position() # go to bottom of menu
             ansi.up(self.height) # go to top of menu
-        options = self.options[self.first:self.first+self.height]
-        options += [""] * (self.height - len(options))
-        for i, option in enumerate(options):
-            if i == 0 and self.first != 0:
-                marker = ansi.colorize("^", "white", bright=True)
-            elif i == self.height-1 and self.first + self.height < len(self.options):
-                marker = ansi.colorize("v", "white", bright=True)
+        page = self.options[self.first:self.first+self.height]
+        page += [""] * (self.height - len(page))
+        for index, option in enumerate(page):
+            line = self._build_menu_line(index, option)
+            self._print(line + "\n")
+
+    def _build_menu_line(self, index, option):
+        line = option + " " * (self.width - len(option))
+        line = self._colorize_line(index, line, )
+        line = self._build_marker(index) + line
+        return line
+
+    def _colorize_line(self, index, line):
+        multiSelected = self._is_multi_selected(index)
+        if self.first + index == self.selected:
+            if multiSelected:
+                line = ansi.colorize(line, "red", "white")
             else:
-                marker = " "
-            multiSelected = self.multiSelect and (self.first + i) in self.selectedItems
-            marker += "* " if multiSelected else "  "
-            line = option + " " * (self.width - len(option))
-            if self.first + i == self.selected:
-                if multiSelected:
-                    line = ansi.colorize(line, "red", "white")
-                else:
-                    line = ansi.colorize(line, "black", "white")
-            elif multiSelected:
-                    line = ansi.colorize(line, "red")
-            line = marker + line + "\n"
-            self._print(line)
+                line = ansi.colorize(line, "black", "white")
+        elif multiSelected:
+                line = ansi.colorize(line, "red")
+        return line
+
+    def _build_marker(self, index):
+        if index == 0 and self.first != 0:
+            marker = ansi.colorize("^", "white", bright=True)
+        elif index == self.height-1 and self.first + self.height < len(self.options):
+            marker = ansi.colorize("v", "white", bright=True)
+        else:
+            marker = " "
+        marker += "* " if self._is_multi_selected(index) else "  "
+        return marker
+
+    def _is_multi_selected(self, index):
+        return self.multiSelect and (self.first + index) in self.selectedItems
 
     def show(self):
         """
@@ -124,20 +137,25 @@ class Menu(object):
                 self.first = self.selected - self.selected % self.height
                 self._print_menu(True)
         finally:
-            if self.clearOnExit:
-                ansi.restore_position()
-                lines = self.height
-                if self.title:
-                    lines += 1
-                ansi.up(lines)
-                for i in xrange(lines):
-                    ansi.clear_line()
-                    ansi.down()
-                ansi.up(lines)
+            ansi.restore_position()
+            lines = self.height
+            if self.title:
+                lines += 1
+            ansi.up(lines)
+            for i in xrange(lines):
+                ansi.clear_line()
+                ansi.down()
+            ansi.up(lines)
             ansi.show_cursor()
-VerticalMenu = Menu
 
-def show_menu(title, options, default=None, clearOnExit=True, height=None, multiSelect=False):
-    menu = Menu(title, options, default, clearOnExit, height, multiSelect)
+class MultiSelect(object):
+    def __init__(self):
+        self.selectedItems = set()
+
+class MultiSelectMenu(MultiSelect, Menu):
+    pass
+
+def show_menu(title, options, default=None, height=None, multiSelect=False):
+    menu = Menu(title, options, default, height, multiSelect)
     return menu.show()
-show_vertical_menu = show_menu
+show_menu
