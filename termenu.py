@@ -111,7 +111,7 @@ class Menu(object):
                         return self.options[self.selected]
                 elif key == "esc":
                     return None
-                elif key == " ":
+                elif key == "space":
                     if self.multiSelect:
                         if self.selected in self.selectedItems:
                             self.selectedItems.remove(self.selected)

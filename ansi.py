@@ -27,6 +27,9 @@ def move(row, column):
 def clear_screen():
     _print("\x1b[2J")
 
+def clear_eol():
+    _print("\x1b[0K")
+
 def clear_line():
     _print("\x1b[2K")
 

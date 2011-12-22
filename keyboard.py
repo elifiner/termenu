@@ -37,7 +37,9 @@ ANSI_SEQUENCES = dict(
 KEY_NAMES = dict((v,k) for k,v in ANSI_SEQUENCES.items())
 KEY_NAMES.update({
     '\x1b' : 'esc',
-    '\n' : 'enter'
+    '\n' : 'enter',
+    ' ' : 'space',
+    '\x7f' : 'backspace',
 })
 
 class RawTerminal(object):
