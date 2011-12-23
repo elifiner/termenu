@@ -31,7 +31,7 @@ Examples:
     parser.add_option("-f", "--file", help="Take menu items from a file", metavar="FILE")
     parser.add_option("-t", "--title", help="A title for the menu", default="")
     parser.add_option("-d", "--default", help="Default item to select", metavar="OPTION")
-    parser.add_option("-l", "--lines", type="int", help="Max lines for vertical menu", metavar="LINES", default=20)
+    parser.add_option("-l", "--lines", type="int", help="Max lines for vertical menu", metavar="LINES", default=5)
     parser.add_option("-o", "--one", action="store_true", help="Don't show a menu if only one option was given")
     parser.add_option("-m", "--multi-select", dest="multiSelect", action="store_true", help="Allow multiple selection via <Space> key")
     (options, args) = parser.parse_args()
