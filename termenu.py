@@ -172,9 +172,9 @@ class Menu(object):
             self._clear_menu()
             ansi.show_cursor()
 
-class SearchMenu(Menu):
+class SearchMixin(object):
     def __init__(self, *args, **kwargs):
-        super(SearchMenu, self).__init__(*args, **kwargs)
+        super(SearchMixin, self).__init__(*args, **kwargs)
         self.searchMode = False
         self.searchText = ""
         self._allOptions = self.options
@@ -183,7 +183,7 @@ class SearchMenu(Menu):
 
     def _print_menu(self):
         if self.options:
-            super(SearchMenu, self)._print_menu()
+            super(SearchMixin, self)._print_menu()
         else:
             for i in xrange(self.height):
                 ansi.clear_line()
@@ -225,7 +225,7 @@ class SearchMenu(Menu):
             self._stop_search()
             return False
         else:
-            return super(SearchMenu, self)._on_esc()
+            return super(SearchMixin, self)._on_esc()
 
     def _dispatch_key(self, key):
         if len(key) == 1 and 32 < ord(key) < 127:
@@ -233,15 +233,15 @@ class SearchMenu(Menu):
             self.searchText += key
             self._refilter()
         else:
-            return super(SearchMenu, self)._dispatch_key(key)
+            return super(SearchMixin, self)._dispatch_key(key)
 
-class MultiSelectMenu(SearchMenu):
+class MultiSelectMixin(object):
     def __init__(self, *args, **kwargs):
-        super(MultiSelectMenu, self).__init__(*args, **kwargs)
+        super(MultiSelectMixin, self).__init__(*args, **kwargs)
         self.selectedItems = set()
 
     def _build_marker(self, index):
-        marker = super(MultiSelectMenu, self)._build_marker(index)
+        marker = super(MultiSelectMixin, self)._build_marker(index)
         marker += "*" if self._is_multi_selected(index) else " "
         return marker
 
@@ -267,7 +267,7 @@ class MultiSelectMenu(SearchMenu):
 
     def _on_esc(self):
         self.result = []
-        return super(MultiSelectMenu, self)._on_esc()
+        return super(MultiSelectMixin, self)._on_esc()
 
     def _on_space(self):
         option = self.options[self.selected]
@@ -279,8 +279,10 @@ class MultiSelectMenu(SearchMenu):
 
 def show_menu(title, options, default=None, height=None, multiSelect=False):
     if multiSelect:
-        klass = MultiSelectMenu
+        class MenuClass(MultiSelectMixin, SearchMixin, Menu):
+            pass
     else:
-        klass = SearchMenu
-    menu = klass(title, options, default, height)
+        class MenuClass(SearchMixin, Menu):
+            pass
+    menu = MenuClass(title, options, default, height)
     return menu.show()
