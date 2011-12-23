@@ -21,12 +21,12 @@ from distutils.core import setup
 DESCRIPTION = """
 Shows an inline interactive menu. Menu items can be supplied as arguments,
 via STDIN (if no arguments were given) or a file (using -f).
-Menus can be vertical (multi-line) or one-line.
+Useful for improving the usability of command line tools such as git.
 """
 
 setup(
     name='termenu',
-    version='0.1.2',
+    version='0.2.0',
     description='Interactive in-line menus for Unix-based terminals',
     long_description=DESCRIPTION,
     author='Eli Golovinsky',

@@ -46,14 +46,11 @@ class Menu(object):
         sys.stdout.write(data)
         sys.stdout.flush()
 
-    def _print_menu(self, redraw=False):
-        if redraw:
-            ansi.restore_position() # go to bottom of menu (see ansi.save_position)
-            ansi.up(self.height) # go to top of menu
+    def _print_menu(self):
         page = self.options[self.first:self.first+self.height]
         page += [""] * (self.height - len(page))
-        for index, option in enumerate(page):
-            line = self._build_menu_line(index, option)
+        for i, option in enumerate(page):
+            line = self._build_menu_line(self.first + i, option)
             self._print(line + "\n")
 
     def _build_menu_line(self, index, option):
@@ -63,14 +60,14 @@ class Menu(object):
         return line
 
     def _colorize_line(self, index, line):
-        if self.first + index == self.selected:
+        if index == self.selected:
             line = ansi.colorize(line, "black", "white")
         return line
 
     def _build_marker(self, index):
-        if index == 0 and self.first != 0:
+        if index != 0 and index == self.first:
             marker = ansi.colorize("^", "white", bright=True)
-        elif index == self.height-1 and self.first + self.height < len(self.options):
+        elif index == self.first + self.height - 1 and self.first + self.height < len(self.options):
             marker = ansi.colorize("v", "white", bright=True)
         else:
             marker = " "
@@ -114,12 +111,29 @@ class Menu(object):
         self.result = None
         return True
 
+    def _dispatch_key(self, key):
+        handler = "_on_" + key
+        if hasattr(self, handler):
+            return getattr(self, handler)()
+
     def _adjust_selected(self):
         if self.selected < 0:
             self.selected = 0
         if self.selected > len(self.options)-1:
             self.selected = len(self.options)-1
         self.first = self.selected - self.selected % self.height
+
+    def _clear_menu(self):
+        ansi.restore_position()
+        lines = self.height
+        if self.title:
+            lines += 1
+        ansi.up(lines)
+        for i in xrange(lines):
+            ansi.clear_line()
+            ansi.down()
+        ansi.clear_line()
+        ansi.up(lines)
 
     def show(self):
         """
@@ -129,42 +143,96 @@ class Menu(object):
         import keyboard
         if self.title:
             self._print(ansi.colorize(self.title, "white", bright=True) + "\n")
-        self._print_menu(False)
+        self._print_menu()
         ansi.save_position() # save bottom-of-menu position for future reference
         ansi.hide_cursor()
         try:
             for key in keyboard.keyboard_listener():
-                handler = "_on_" + key
-                if hasattr(self, handler):
-                    ret = getattr(self, handler)()
-                    if ret:
-                        return self.result
-                self._print_menu(True)
+                ret = self._dispatch_key(key)
+                if ret:
+                    return self.result
+                ansi.restore_position() # go to bottom of menu
+                ansi.up(self.height) # go to top of menu
+                self._print_menu()
         finally:
-            ansi.restore_position()
-            lines = self.height
-            if self.title:
-                lines += 1
-            ansi.up(lines)
-            for i in xrange(lines):
-                ansi.clear_line()
-                ansi.down()
-            ansi.up(lines)
+            self._clear_menu()
             ansi.show_cursor()
 
-class MultiSelectMenu(Menu):
+class SearchMenu(Menu):
+    def __init__(self, *args, **kwargs):
+        super(SearchMenu, self).__init__(*args, **kwargs)
+        self.searchMode = False
+        self.searchText = ""
+        self._allOptions = self.options
+        self._refilter()
+
+    def _print_menu(self):
+        if self.options:
+            super(SearchMenu, self)._print_menu()
+        else:
+            for i in xrange(self.height):
+                ansi.clear_line()
+                ansi.down()
+        ansi.clear_line()
+        if self.searchMode:
+            self._print("/" + self.searchText)
+
+    def _start_search(self):
+        if not self.searchMode:
+            self.searchText = ""
+            self.searchMode = True
+            ansi.show_cursor()
+
+    def _stop_search(self):
+        if self.searchMode:
+            self.searchMode = False
+            ansi.hide_cursor()
+            self._refilter()
+
+    def _refilter(self):
+        if self.searchMode:
+            filtered = [(i, o) for i, o in enumerate(self._allOptions) if self.searchText.lower() in o.lower()]
+            self.options = [o for i,o in filtered]
+            self._indexes = [i for i,o in filtered]
+        else:
+            self.options = self._allOptions
+            self._indexes = xrange(len(self._allOptions))
+        self.selected = 0
+        self.first = 0
+
+    def _on_backspace(self):
+        if self.searchMode and self.searchText:
+            self.searchText = self.searchText[:-1]
+            self._refilter()
+
+    def _on_esc(self):
+        if self.searchMode:
+            self._stop_search()
+            return False
+        else:
+            return super(SearchMenu, self)._on_esc()
+
+    def _dispatch_key(self, key):
+        if len(key) == 1 and 32 < ord(key) < 127:
+            self._start_search()
+            self.searchText += key
+            self._refilter()
+        else:
+            return super(SearchMenu, self)._dispatch_key(key)
+
+class MultiSelectMenu(SearchMenu):
     def __init__(self, *args, **kwargs):
         super(MultiSelectMenu, self).__init__(*args, **kwargs)
         self.selectedItems = set()
 
     def _build_marker(self, index):
         marker = super(MultiSelectMenu, self)._build_marker(index)
-        marker += "* " if self._is_multi_selected(index) else "  "
+        marker += "*" if self._is_multi_selected(index) else " "
         return marker
 
     def _colorize_line(self, index, line):
         multiSelected = self._is_multi_selected(index)
-        if self.first + index == self.selected:
+        if index == self.selected:
             if multiSelected:
                 line = ansi.colorize(line, "red", "white")
             else:
@@ -174,24 +242,29 @@ class MultiSelectMenu(Menu):
         return line
 
     def _is_multi_selected(self, index):
-        return (self.first + index) in self.selectedItems
+        return index < len(self.options) and self.options[index] in self.selectedItems
 
     def _on_enter(self):
         if not self.selectedItems:
-            self.selectedItems.add(self.selected)
-        self.result = [self.options[i] for i in sorted(self.selectedItems)]
+            self.selectedItems.add(self.options[self.selected])
+        self.result = list(sorted(self.selectedItems))
         return True
 
+    def _on_esc(self):
+        self.result = []
+        return super(MultiSelectMenu, self)._on_esc()
+
     def _on_space(self):
-        if self.selected in self.selectedItems:
-            self.selectedItems.remove(self.selected)
+        option = self.options[self.selected]
+        if option in self.selectedItems:
+            self.selectedItems.remove(option)
         else:
-            self.selectedItems.add(self.selected)
+            self.selectedItems.add(option)
 
 def show_menu(title, options, default=None, height=None, multiSelect=False):
     if multiSelect:
         klass = MultiSelectMenu
     else:
-        klass = Menu
+        klass = SearchMenu
     menu = klass(title, options, default, height)
     return menu.show()
