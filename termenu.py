@@ -73,34 +73,45 @@ class Menu(object):
             marker = " "
         return marker
 
+    def _logical_height(self):
+        return min(self.height, len(self.options))
+
     def _on_down(self):
+        if self.selected == self.first + self._logical_height() - 1:
+            self.first += 1
         self.selected += 1
         self._adjust_selected()
 
     def _on_up(self):
+        if self.selected == self.first:
+            self.first -= 1
         self.selected -= 1
         self._adjust_selected()
 
     def _on_pageDown(self):
-        if self.selected % self.height < self.height-1:
-            self.selected = self.selected - self.selected % self.height + self.height - 1
+        if self.selected == self.first + self._logical_height() - 1:
+            self.selected += self._logical_height()
+            self.first += self._logical_height()
         else:
-            self.selected += self.height
+            self.selected = self.first + self._logical_height() - 1
         self._adjust_selected()
 
     def _on_pageUp(self):
-        if self.selected % self.height > 0:
-            self.selected = self.selected - self.selected % self.height
+        if self.selected == self.first:
+            self.selected -= self._logical_height()
+            self.first -= self._logical_height()
         else:
-            self.selected -= self.height
+            self.selected = self.first
         self._adjust_selected()
 
     def _on_home(self):
         self.selected = 0
+        self.first = 0
         self._adjust_selected()
 
     def _on_end(self):
         self.selected = len(self.options)-1
+        self.first = self.selected - self._logical_height() + 1
         self._adjust_selected()
 
     def _on_enter(self):
@@ -121,7 +132,10 @@ class Menu(object):
             self.selected = 0
         if self.selected > len(self.options)-1:
             self.selected = len(self.options)-1
-        self.first = self.selected - self.selected % self.height
+        if self.first < 0:
+            self.first = 0
+        if self.first > (len(self.options) - self._logical_height()):
+            self.first = len(self.options) - self._logical_height()
 
     def _clear_menu(self):
         ansi.restore_position()
@@ -164,6 +178,7 @@ class SearchMenu(Menu):
         self.searchMode = False
         self.searchText = ""
         self._allOptions = self.options
+        self._fullHeight = self.height
         self._refilter()
 
     def _print_menu(self):
@@ -260,8 +275,7 @@ class MultiSelectMenu(SearchMenu):
             self.selectedItems.remove(option)
         else:
             self.selectedItems.add(option)
-        self.selected += 1
-        self._adjust_selected()
+        self._on_down()
 
 def show_menu(title, options, default=None, height=None, multiSelect=False):
     if multiSelect:
