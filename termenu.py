@@ -260,6 +260,8 @@ class MultiSelectMenu(SearchMenu):
             self.selectedItems.remove(option)
         else:
             self.selectedItems.add(option)
+        self.selected += 1
+        self._adjust_selected()
 
 def show_menu(title, options, default=None, height=None, multiSelect=False):
     if multiSelect:
