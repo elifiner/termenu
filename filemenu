@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+import os
+import sys
+import ansi
+import termenu
+
+class FileMenu(termenu.SearchMixin, termenu.Menu):
+    def _on_backspace(self):
+        if self.searchMode:
+            super(FileMenu, self)._on_backspace()
+        else:
+            self.result = ".."
+            return True
+
+    def _on_left(self):
+        return self._on_pageUp()
+
+    def _on_right(self):
+        return self._on_pageDown()
+
+    def _colorize_line(self, index, line):
+        if index >= len(self.options):
+            return line
+        directory = self.options[index][-1] == "/"
+        exe = isexe(self.options[index])
+        if index == self.selected:
+            if directory:
+                line = ansi.colorize(line, "blue", "white", bright=True)
+            elif exe:
+                line = ansi.colorize(line, "green", "white", bright=True)
+            else:
+                line = ansi.colorize(line, "black", "white")
+        elif directory:
+                line = ansi.colorize(line, "blue", bright=True)
+        elif exe:
+                line = ansi.colorize(line, "green", bright=True)
+        return line
+
+def isexe(path):
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
+def list_files():
+    dirs = list(sorted([f+"/" for f in os.listdir(".") if os.path.isdir(f)]))
+    files = list(sorted([f for f in os.listdir(".") if not os.path.isdir(f)]))
+#~     files = [f+"*" if isexe(f) else f for f in files]
+    entries = dirs + files
+    entries = [e for e in entries if e[0] != "."]
+    if os.getcwd() != "/":
+        entries = ["../"] + entries
+    return entries
+
+def main():
+    # Always connect stdin/stdout to the controlling terminal, even if redirected
+    redirectedStdin = sys.stdin
+    redirectedStdout = sys.stdout
+    if not sys.stdin.isatty():
+        sys.stdin = open("/dev/tty")
+    if not sys.stdout.isatty():
+        sys.stdout = open("/dev/tty", "w")
+
+    while True:
+        selected = FileMenu(os.getcwd(), list_files(), height=15).show()
+        if selected:
+            if os.path.isdir(selected):
+                os.chdir(selected)
+            else:
+                print >>redirectedStdout, os.path.abspath(selected)
+                return
+        else:
+            print >>redirectedStdout, os.getcwd()
+            return
+
+if __name__ == "__main__":
+    main()
