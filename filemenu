@@ -52,7 +52,7 @@ def main():
         sys.stdout = open("/dev/tty", "w")
 
     while True:
-        selected = FileMenu(os.getcwd(), list_files(), height=5).show()
+        selected = FileMenu(os.getcwd(), list_files(), rows=5, maxColumnWidth=30).show()
         if selected:
             if len(selected) == 1 and os.path.isdir(selected[0]):
                 os.chdir(selected[0])
