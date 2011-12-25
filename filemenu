@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import os
 import sys
-import ansi
 import termenu
+#~ import termenu.ansi
 
 class FileMenu(termenu.MultiSelectMixin, termenu.SearchMixin, termenu.Menu):
     def _on_backspace(self):
@@ -19,15 +19,15 @@ class FileMenu(termenu.MultiSelectMixin, termenu.SearchMixin, termenu.Menu):
         exe = isexe(self.options[index])
         if index == self.selected:
             if directory:
-                item = ansi.colorize(item, "blue", "white", bright=True)
+                item = termenu.ansi.colorize(item, "blue", "white", bright=True)
             elif exe:
-                item = ansi.colorize(item, "green", "white", bright=True)
+                item = termenu.ansi.colorize(item, "green", "white", bright=True)
             else:
-                item = ansi.colorize(item, "black", "white")
+                item = termenu.ansi.colorize(item, "black", "white")
         elif directory:
-                item = ansi.colorize(item, "blue", bright=True)
+                item = termenu.ansi.colorize(item, "blue", bright=True)
         elif exe:
-                item = ansi.colorize(item, "green", bright=True)
+                item = termenu.ansi.colorize(item, "green", bright=True)
         return item
 
 def isexe(path):

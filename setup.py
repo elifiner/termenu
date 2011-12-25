@@ -35,7 +35,7 @@ setup(
     url='https://github.com/gooli/termenu',
     package_dir={'termenu':'.'},
     packages=['termenu'],
-    scripts=['termenu'],
+    scripts=['termenu', 'filemenu'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
