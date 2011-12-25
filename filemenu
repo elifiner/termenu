@@ -38,6 +38,7 @@ def list_files():
     files = list(sorted([f for f in os.listdir(".") if not os.path.isdir(f)]))
     entries = dirs + files
     entries = [e for e in entries if e[0] != "."]
+    entries = [e.decode("utf8") for e in entries]
     if os.getcwd() != "/":
         entries = ["../"] + entries
     return entries
@@ -52,7 +53,7 @@ def main():
         sys.stdout = open("/dev/tty", "w")
 
     while True:
-        selected = FileMenu(os.getcwd(), list_files(), rows=5, maxColumnWidth=30).show()
+        selected = FileMenu(os.getcwd(), list_files(), rows=5, maxColumnWidth=30, encoding="utf8").show()
         if selected:
             if len(selected) == 1 and os.path.isdir(selected[0]):
                 os.chdir(selected[0])

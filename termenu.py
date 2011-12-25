@@ -20,7 +20,7 @@ class Menu(object):
         print result
     """
     MAX_COLUMNS = 5
-    def __init__(self, title, options, default=None, rows=None, columns=None, maxColumnWidth=None):
+    def __init__(self, title, options, default=None, rows=None, columns=None, maxColumnWidth=None, encoding=None):
         self.title = title
         self.options = options
         self.maxColumnWidth = maxColumnWidth
@@ -31,6 +31,7 @@ class Menu(object):
         self.selected = self._compute_default(default)
         self.rows = self._compute_rows(rows)
         self.first = self.selected - self.selected % self.rows
+        self.encoding = encoding
         self.result = None
 
     def _shorten(self, text, width):
@@ -78,6 +79,8 @@ class Menu(object):
     def _build_menu_item(self, index, option):
         option = self._shorten(option, self.maxColumnWidth)
         item = option + " " * (self.width - len(option))
+        if self.encoding:
+            item = item.encode(self.encoding)
         item = self._colorize_item(index, item, )
         item = self._build_left_marker(index) + item + self._build_right_marker(index)
         return item
