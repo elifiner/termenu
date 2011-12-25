@@ -297,8 +297,8 @@ class MultiSelectMixin(object):
         super(MultiSelectMixin, self).__init__(*args, **kwargs)
         self.selectedItems = set()
 
-    def _build_marker(self, index):
-        marker = super(MultiSelectMixin, self)._build_marker(index)
+    def _build_left_marker(self, index):
+        marker = super(MultiSelectMixin, self)._build_left_marker(index)
         marker += "*" if self._is_multi_selected(index) else " "
         return marker
 
@@ -306,9 +306,9 @@ class MultiSelectMixin(object):
         multiSelected = self._is_multi_selected(index)
         if index == self.selected:
             if multiSelected:
-                item = ansi.colorize(item, "red", "white")
+                item = ansi.colorize(item, "red", "white", bright=True)
             else:
-                item = ansi.colorize(item, "black", "white")
+                item = ansi.colorize(item, "black", "white", bright=True)
         elif multiSelected:
                 item = ansi.colorize(item, "red")
         return item
