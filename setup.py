@@ -26,7 +26,7 @@ Useful for improving the usability of command line tools such as git.
 
 setup(
     name='termenu',
-    version='0.2.0',
+    version='0.3.0',
     description='Interactive in-line menus for Unix-based terminals',
     long_description=DESCRIPTION,
     author='Eli Golovinsky',
