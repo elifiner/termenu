@@ -20,15 +20,21 @@ class Menu(object):
         print result
     """
     MAX_COLUMNS = 5
-    def __init__(self, title, options, default=None, height=None, columns=None):
+    def __init__(self, title, options, default=None, height=None, columns=None, columnWidth=30):
         self.title = title
         self.options = options
-        self.width = max(len(option) for option in self.options)
+        self.columnWidth = columnWidth 
+        self.width = min(self.columnWidth, max(len(option) for option in self.options))
         self.columns = self._compute_columns(columns)
         self.selected = self._compute_default(default)
         self.height = self._compute_height(height)
         self.first = self.selected - self.selected % self.height
         self.result = None
+
+    def _shorten(self, text, width):
+        if len(text) > width:
+            text = text[:width/2-2]+"..."+text[-width/2+1:]
+        return text
         
     def _compute_height(self, height):
         maxHeight = get_terminal_size()[1]-2 
@@ -68,6 +74,7 @@ class Menu(object):
             self._print("\n")
 
     def _build_menu_item(self, index, option):
+        option = self._shorten(option, self.columnWidth)
         item = option + " " * (self.width - len(option))
         item = self._colorize_item(index, item, )
         item = self._build_left_marker(index) + item + self._build_right_marker(index)
@@ -351,6 +358,11 @@ class MultiSelectMixin(object):
         marker += "*" if self._is_multi_selected(index) else " "
         return marker
 
+    def _build_right_marker(self, index):
+        marker = super(MultiSelectMixin, self)._build_right_marker(index)
+        marker = " " + marker
+        return marker
+
     def _colorize_item(self, index, item):
         multiSelected = self._is_multi_selected(index)
         if index == self.selected:
@@ -382,7 +394,6 @@ class MultiSelectMixin(object):
         else:
             self.selectedItems.add(option)
         self._on_down()
-
 
 def show_menu(title, options, default=None, height=None, multiSelect=False):
     if multiSelect:
