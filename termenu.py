@@ -20,27 +20,29 @@ class Menu(object):
         print result
     """
     MAX_COLUMNS = 5
-    def __init__(self, title, options, default=None, height=None, columns=None, columnWidth=30):
+    def __init__(self, title, options, default=None, rows=None, columns=None, maxColumnWidth=None):
         self.title = title
         self.options = options
-        self.columnWidth = columnWidth 
-        self.width = min(self.columnWidth, max(len(option) for option in self.options))
+        self.maxColumnWidth = maxColumnWidth
+        self.width = max(len(option) for option in self.options)
+        if self.maxColumnWidth:
+            self.width = min(self.maxColumnWidth, self.width)
         self.columns = self._compute_columns(columns)
         self.selected = self._compute_default(default)
-        self.height = self._compute_height(height)
-        self.first = self.selected - self.selected % self.height
+        self.rows = self._compute_rows(rows)
+        self.first = self.selected - self.selected % self.rows
         self.result = None
 
     def _shorten(self, text, width):
-        if len(text) > width:
+        if width and len(text) > width:
             text = text[:width/2-2]+"..."+text[-width/2+1:]
         return text
-        
-    def _compute_height(self, height):
-        maxHeight = get_terminal_size()[1]-2 
-        if height is None:
-            height = maxHeight
-        return min(len(self.options), height, maxHeight)
+
+    def _compute_rows(self, rows):
+        maxHeight = get_terminal_size()[1]-2
+        if rows is None:
+            rows = maxHeight
+        return min(len(self.options), rows, maxHeight)
 
     def _compute_columns(self, columns):
         if columns is None:
@@ -62,9 +64,9 @@ class Menu(object):
         sys.stdout.flush()
 
     def _print_menu(self):
-        page = self.options[self.first:self.first+self.height*self.columns]
-        for row in xrange(self.height):
-            lineItemIndexes = range(row, row+len(page), self.height)
+        page = self.options[self.first:self.first+self.rows*self.columns]
+        for row in xrange(self.rows):
+            lineItemIndexes = range(row, row+len(page), self.rows)
             items = []
             for index in lineItemIndexes:
                 if index < len(page):
@@ -74,7 +76,7 @@ class Menu(object):
             self._print("\n")
 
     def _build_menu_item(self, index, option):
-        option = self._shorten(option, self.columnWidth)
+        option = self._shorten(option, self.maxColumnWidth)
         item = option + " " * (self.width - len(option))
         item = self._colorize_item(index, item, )
         item = self._build_left_marker(index) + item + self._build_right_marker(index)
@@ -104,19 +106,19 @@ class Menu(object):
         return item
 
     def _items_in_page(self):
-        return min(self.height * self.columns, len(self.options))
+        return min(self.rows * self.columns, len(self.options))
 
     def _top_right(self):
-        return self.first + self.height * (self.columns - 1)
+        return self.first + self.rows * (self.columns - 1)
 
     def _bottom_right(self):
-        return self.first + self.height * self.columns - 1
+        return self.first + self.rows * self.columns - 1
 
     def _top_left(self):
         return self.first
 
     def _bottom_left(self):
-        return self.first + self.height - 1
+        return self.first + self.rows - 1
 
     def _on_down(self):
         if self.selected == self.first + self._items_in_page() - 1:
@@ -135,10 +137,10 @@ class Menu(object):
             if self.selected < self._bottom_right():
                 self.selected = self._bottom_right()
             elif self.selected == self._bottom_right():
-                self.first += self.height
-                self.selected += self.height
+                self.first += self.rows
+                self.selected += self.rows
         else:
-            self.selected += self.height
+            self.selected += self.rows
         self._adjust_selected()
 
     def _on_left(self):
@@ -146,10 +148,10 @@ class Menu(object):
             if self.selected > self._top_left():
                 self.selected = self._top_left()
             elif self.selected == self._top_left():
-                self.first -= self.height
-                self.selected -= self.height
+                self.first -= self.rows
+                self.selected -= self.rows
         else:
-            self.selected -= self.height
+            self.selected -= self.rows
         self._adjust_selected()
 
     def _on_pageDown(self):
@@ -203,7 +205,7 @@ class Menu(object):
 
     def _clear_menu(self):
         ansi.restore_position()
-        lines = self.height
+        lines = self.rows
         if self.title:
             lines += 1
         ansi.up(lines)
@@ -230,7 +232,7 @@ class Menu(object):
                 if ret:
                     return self.result
                 ansi.restore_position() # go to bottom of menu
-                ansi.up(self.height) # go to top of menu
+                ansi.up(self.rows) # go to top of menu
                 self._print_menu()
         finally:
             self._clear_menu()
@@ -242,14 +244,14 @@ class FilterMixin(object):
         self.filterMode = False
         self.filterText = ""
         self._allOptions = self.options
-        self._fullHeight = self.height
+        self._fullHeight = self.rows
         self._refilter()
 
     def _print_menu(self):
         if self.options:
             super(FilterMixin, self)._print_menu()
         else:
-            for i in xrange(self.height):
+            for i in xrange(self.rows):
                 ansi.clear_line()
                 ansi.down()
         ansi.clear_line()
@@ -395,12 +397,12 @@ class MultiSelectMixin(object):
             self.selectedItems.add(option)
         self._on_down()
 
-def show_menu(title, options, default=None, height=None, multiSelect=False):
+def show_menu(title, options, default=None, rows=None, columns=None, maxColumnWidth=None, multiSelect=False):
     if multiSelect:
         class MenuClass(MultiSelectMixin, FilterMixin, Menu):
             pass
     else:
         class MenuClass(FilterMixin, Menu):
             pass
-    menu = MenuClass(title, options, default, height)
+    menu = MenuClass(title, options, default, rows, columns, maxColumnWidth)
     return menu.show()
