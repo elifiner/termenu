@@ -4,7 +4,7 @@ import sys
 import ansi
 import termenu
 
-class FileMenu(termenu.SearchMixin, termenu.Menu):
+class FileMenu(termenu.MultiSelectMixin, termenu.SearchMixin, termenu.Menu):
     def _on_backspace(self):
         if self.searchMode:
             super(FileMenu, self)._on_backspace()
@@ -54,10 +54,11 @@ def main():
     while True:
         selected = FileMenu(os.getcwd(), list_files(), height=5).show()
         if selected:
-            if os.path.isdir(selected):
-                os.chdir(selected)
+            if len(selected) == 1 and os.path.isdir(selected[0]):
+                os.chdir(selected[0])
             else:
-                print >>redirectedStdout, os.path.abspath(selected)
+                for file in selected:
+                    print >>redirectedStdout, os.path.abspath(file)
                 return
         else:
             print >>redirectedStdout, os.getcwd()
