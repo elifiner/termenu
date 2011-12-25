@@ -39,7 +39,7 @@ class Menu(object):
     def _compute_columns(self, columns):
         if columns is None:
             columns = self.MAX_COLUMNS
-        return min(columns, get_terminal_size()[0] / (self.width + 1))
+        return min(columns, get_terminal_size()[0] / (self.width + 2))
 
     def _compute_default(self, default):
         if default is None:
@@ -229,22 +229,78 @@ class Menu(object):
             self._clear_menu()
             ansi.show_cursor()
 
-class SearchMixin(object):
+class FilterMixin(object):
     def __init__(self, *args, **kwargs):
-        super(SearchMixin, self).__init__(*args, **kwargs)
-        self.searchMode = False
-        self.searchText = ""
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        self.filterMode = False
+        self.filterText = ""
         self._allOptions = self.options
         self._fullHeight = self.height
         self._refilter()
 
     def _print_menu(self):
         if self.options:
-            super(SearchMixin, self)._print_menu()
+            super(FilterMixin, self)._print_menu()
         else:
             for i in xrange(self.height):
                 ansi.clear_line()
                 ansi.down()
+        ansi.clear_line()
+        if self.filterMode:
+            self._print("/" + self.filterText)
+
+    def _start_filter(self):
+        if not self.filterMode:
+            self.filterText = ""
+            self.filterMode = True
+            ansi.show_cursor()
+
+    def _stop_filter(self):
+        if self.filterMode:
+            self.filterMode = False
+            ansi.hide_cursor()
+            self._refilter()
+
+    def _refilter(self):
+        if self.filterMode:
+            filtered = [(i, o) for i, o in enumerate(self._allOptions) if self.filterText.lower() in o.lower()]
+            self.options = [o for i,o in filtered]
+            self._indexes = [i for i,o in filtered]
+        else:
+            self.options = self._allOptions
+            self._indexes = xrange(len(self._allOptions))
+        self.selected = 0
+        self.first = 0
+
+    def _on_backspace(self):
+        if self.filterMode and self.filterText:
+            self.filterText = self.filterText[:-1]
+            self._refilter()
+
+    def _on_esc(self):
+        if self.filterMode:
+            self._stop_filter()
+            return False
+        else:
+            return super(FilterMixin, self)._on_esc()
+
+    def _dispatch_key(self, key):
+        if len(key) == 1 and 32 < ord(key) < 127:
+            self._start_filter()
+            self.filterText += key
+            self._refilter()
+        else:
+            return super(FilterMixin, self)._dispatch_key(key)
+
+class SearchMixin(object):
+    def __init__(self, *args, **kwargs):
+        super(SearchMixin, self).__init__(*args, **kwargs)
+        self.options.sort()
+        self.searchMode = False
+        self.searchText = ""
+
+    def _print_menu(self):
+        super(SearchMixin, self)._print_menu()
         ansi.clear_line()
         if self.searchMode:
             self._print("/" + self.searchText)
@@ -259,23 +315,10 @@ class SearchMixin(object):
         if self.searchMode:
             self.searchMode = False
             ansi.hide_cursor()
-            self._refilter()
-
-    def _refilter(self):
-        if self.searchMode:
-            filtered = [(i, o) for i, o in enumerate(self._allOptions) if self.searchText.lower() in o.lower()]
-            self.options = [o for i,o in filtered]
-            self._indexes = [i for i,o in filtered]
-        else:
-            self.options = self._allOptions
-            self._indexes = xrange(len(self._allOptions))
-        self.selected = 0
-        self.first = 0
 
     def _on_backspace(self):
         if self.searchMode and self.searchText:
             self.searchText = self.searchText[:-1]
-            self._refilter()
 
     def _on_esc(self):
         if self.searchMode:
@@ -287,9 +330,15 @@ class SearchMixin(object):
     def _dispatch_key(self, key):
         if len(key) == 1 and 32 < ord(key) < 127:
             self._start_search()
+            # search longer text
             self.searchText += key
-            self._refilter()
+            lowerSearchText = self.searchText.lower()
+            matches = [i for i, option in enumerate(self.options) if option.lower().startswith(lowerSearchText)]
+            if matches:
+                self.selected = matches[0]
         else:
+            if key in "up down left right pageUp pageDown home end".split():
+                self._stop_search()
             return super(SearchMixin, self)._dispatch_key(key)
 
 class MultiSelectMixin(object):
@@ -308,9 +357,9 @@ class MultiSelectMixin(object):
             if multiSelected:
                 item = ansi.colorize(item, "red", "white", bright=True)
             else:
-                item = ansi.colorize(item, "black", "white", bright=True)
+                item = ansi.colorize(item, "black", "white")
         elif multiSelected:
-                item = ansi.colorize(item, "red")
+                item = ansi.colorize(item, "red", bright=True)
         return item
 
     def _is_multi_selected(self, index):
@@ -337,10 +386,10 @@ class MultiSelectMixin(object):
 
 def show_menu(title, options, default=None, height=None, multiSelect=False):
     if multiSelect:
-        class MenuClass(MultiSelectMixin, SearchMixin, Menu):
+        class MenuClass(MultiSelectMixin, FilterMixin, Menu):
             pass
     else:
-        class MenuClass(SearchMixin, Menu):
+        class MenuClass(FilterMixin, Menu):
             pass
     menu = MenuClass(title, options, default, height)
     return menu.show()

@@ -9,7 +9,7 @@ class FileMenu(termenu.MultiSelectMixin, termenu.SearchMixin, termenu.Menu):
         if self.searchMode:
             super(FileMenu, self)._on_backspace()
         else:
-            self.result = ".."
+            self.result = [".."]
             return True
 
     def _colorize_item(self, index, item):
