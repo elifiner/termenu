@@ -78,7 +78,10 @@ class Menu(object):
 
     def _build_menu_item(self, index, option):
         option = self._shorten(option, self.maxColumnWidth)
-        item = option + " " * (self.width - len(option))
+        if self.rows > 1:
+            item = option + " " * (self.width - len(option))
+        else:
+            item = option
         if self.encoding:
             item = item.encode(self.encoding)
         item = self._colorize_item(index, item, )
