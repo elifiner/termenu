@@ -351,6 +351,8 @@ class SearchMixin(object):
             matches = [i for i, option in enumerate(self.options) if option.lower().startswith(lowerSearchText)]
             if matches:
                 self.selected = matches[0]
+                if self.selected >= self.first + self._items_in_page() - 1:
+                    self.first = self.selected - self._items_in_page() + 1
         else:
             if key in "up down left right pageUp pageDown home end".split():
                 self._stop_search()
