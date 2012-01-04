@@ -20,9 +20,10 @@ class Menu(object):
         print result
     """
     MAX_COLUMNS = 5
-    def __init__(self, title, options, default=None, rows=None, columns=None, maxColumnWidth=None, encoding=None):
+    def __init__(self, title, options, default=None, rows=None, columns=None, maxColumnWidth=None, encoding=None, objects=None):
         self.title = title
         self.options = options
+        self.objects = objects if objects else options
         self.maxColumnWidth = maxColumnWidth
         self.width = max(len(option) for option in self.options)
         if self.maxColumnWidth:
@@ -189,7 +190,7 @@ class Menu(object):
         self._adjust_selected()
 
     def _on_enter(self):
-        self.result = self.options[self.selected]
+        self.result = self.objects[self.selected]
         return True
 
     def _on_esc(self):
@@ -364,6 +365,9 @@ class MultiSelectMixin(object):
     def __init__(self, *args, **kwargs):
         super(MultiSelectMixin, self).__init__(*args, **kwargs)
         self.selectedItems = set()
+    
+    def _reset_result(self):
+        self.result = []
 
     def _build_left_marker(self, index):
         marker = super(MultiSelectMixin, self)._build_left_marker(index)
@@ -387,28 +391,28 @@ class MultiSelectMixin(object):
         return item
 
     def _is_multi_selected(self, index):
-        return index < len(self.options) and self.options[index] in self.selectedItems
+        return index < len(self.options) and index in self.selectedItems
 
     def _on_enter(self):
         if not self.selectedItems:
-            self.selectedItems.add(self.options[self.selected])
-        self.result = list(sorted(self.selectedItems))
+            self.selectedItems.add(self.selected)
+        self.result = [self.objects[i] for i in sorted(self.selectedItems)]
         return True
 
     def _on_space(self):
-        option = self.options[self.selected]
+        option = self.selected
         if option in self.selectedItems:
             self.selectedItems.remove(option)
         else:
             self.selectedItems.add(option)
         self._on_down()
 
-def show_menu(title, options, default=None, rows=None, columns=None, maxColumnWidth=None, multiSelect=False):
+def show_menu(title, options, default=None, rows=None, columns=None, maxColumnWidth=None, multiSelect=False, objects=None):
     if multiSelect:
         class MenuClass(MultiSelectMixin, FilterMixin, Menu):
             pass
     else:
         class MenuClass(FilterMixin, Menu):
             pass
-    menu = MenuClass(title, options, default, rows, columns, maxColumnWidth)
+    menu = MenuClass(title, options, default, rows, columns, maxColumnWidth, objects=objects)
     return menu.show()
