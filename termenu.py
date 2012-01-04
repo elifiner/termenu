@@ -32,6 +32,8 @@ class Menu(object):
         self.rows = self._compute_rows(rows)
         self.first = self.selected - self.selected % self.rows
         self.encoding = encoding
+
+    def _reset_result(self):
         self.result = None
 
     def _shorten(self, text, width):
@@ -191,7 +193,7 @@ class Menu(object):
         return True
 
     def _on_esc(self):
-        self.result = None
+        self._reset_result()
         return True
 
     def _dispatch_key(self, key):
@@ -392,10 +394,6 @@ class MultiSelectMixin(object):
             self.selectedItems.add(self.options[self.selected])
         self.result = list(sorted(self.selectedItems))
         return True
-
-    def _on_esc(self):
-        self.result = []
-        return super(MultiSelectMixin, self)._on_esc()
 
     def _on_space(self):
         option = self.options[self.selected]
