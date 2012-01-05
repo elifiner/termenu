@@ -412,3 +412,16 @@ def show_menu(title, options, default=None, rows=None, columns=None, maxColumnWi
             pass
     menu = MenuClass(title, options, default, rows, columns, maxColumnWidth)
     return menu.show()
+
+def redirect_std():
+    """
+    Connect stdin/stdout to controlling terminal even if the scripts input and output
+    were redirected. This is useful in utilities based on termenu.
+    """
+    stdin = sys.stdin
+    stdout = sys.stdout
+    if not sys.stdin.isatty():
+        sys.stdin = open("/dev/tty")
+    if not sys.stdout.isatty():
+        sys.stdout = open("/dev/tty", "w")
+    return stdin, stdout

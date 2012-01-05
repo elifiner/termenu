@@ -44,14 +44,7 @@ def list_files():
     return entries
 
 def main():
-    # Always connect stdin/stdout to the controlling terminal, even if redirected
-    redirectedStdin = sys.stdin
-    redirectedStdout = sys.stdout
-    if not sys.stdin.isatty():
-        sys.stdin = open("/dev/tty")
-    if not sys.stdout.isatty():
-        sys.stdout = open("/dev/tty", "w")
-
+    redirectedStdin, redirectedStdout = termenu.redirect_std()
     while True:
         selected = FileMenu(os.getcwd(), list_files(), rows=5, maxColumnWidth=30, encoding="utf8").show()
         if selected:
