@@ -24,9 +24,7 @@ class Menu(object):
         self.title = title
         self.options = options
         self.maxColumnWidth = maxColumnWidth
-        self.width = max(len(option) for option in self.options)
-        if self.maxColumnWidth:
-            self.width = min(self.maxColumnWidth, self.width)
+        self.width = 0
         self.columns = self._compute_columns(columns)
         self.selected = self._compute_default(default)
         self.rows = self._compute_rows(rows)
@@ -68,6 +66,8 @@ class Menu(object):
 
     def _print_menu(self):
         page = self.options[self.first:self.first+self.rows*self.columns]
+        page = [self._shorten(option, self.maxColumnWidth) for option in page]
+        self.width = max(self.width, max(len(item) for item in page))
         for row in xrange(self.rows):
             lineItemIndexes = range(row, row+len(page), self.rows)
             items = []
