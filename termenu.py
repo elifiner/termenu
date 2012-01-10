@@ -363,7 +363,7 @@ class SearchMixin(object):
 class MultiSelectMixin(object):
     def __init__(self, *args, **kwargs):
         super(MultiSelectMixin, self).__init__(*args, **kwargs)
-        self.selectedItems = set()
+        self.selectedItems = set() # a set of the texts of the selected options
 
     def _build_left_marker(self, index):
         marker = super(MultiSelectMixin, self)._build_left_marker(index)
@@ -379,11 +379,11 @@ class MultiSelectMixin(object):
         multiSelected = self._is_multi_selected(index)
         if index == self.selected:
             if multiSelected:
-                item = ansi.colorize(item, "red", "white", bright=True)
+                item = ansi.colorize(item, "red", "white")
             else:
                 item = ansi.colorize(item, "black", "white")
         elif multiSelected:
-                item = ansi.colorize(item, "red", bright=True)
+                item = ansi.colorize(item, "red")
         return item
 
     def _is_multi_selected(self, index):
