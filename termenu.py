@@ -23,7 +23,7 @@ class Menu(object):
     def __init__(self, title, options, default=None, rows=None, columns=None, maxColumnWidth=None, encoding=None, objects=None):
         self.title = title
         self.options = options
-        self.objects = objects if objects else options
+        self.objects = dict(zip(options, objects if objects else options))
         self.maxColumnWidth = maxColumnWidth
         self.width = 0
         self.columns = self._compute_columns(columns)
@@ -190,7 +190,7 @@ class Menu(object):
         self._adjust_selected()
 
     def _on_enter(self):
-        self.result = self.objects[self.selected]
+        self.result = self.objects[self.options[self.selected]]
         return True
 
     def _on_esc(self):
@@ -388,16 +388,16 @@ class MultiSelectMixin(object):
         return item
 
     def _is_multi_selected(self, index):
-        return index < len(self.options) and index in self.selectedItems
+        return index < len(self.options) and self.options[index] in self.selectedItems
 
     def _on_enter(self):
         if not self.selectedItems:
             self.selectedItems.add(self.selected)
-        self.result = [self.objects[i] for i in sorted(self.selectedItems)]
+        self.result = [option for option in sorted(self.selectedItems)]
         return True
 
     def _on_space(self):
-        option = self.selected
+        option = self.options[self.selected]
         if option in self.selectedItems:
             self.selectedItems.remove(option)
         else:
