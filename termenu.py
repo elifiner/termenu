@@ -422,7 +422,7 @@ def redirect_std():
     stdin = sys.stdin
     stdout = sys.stdout
     if not sys.stdin.isatty():
-        sys.stdin = open("/dev/tty")
+        sys.stdin = open("/dev/tty", "r", 0)
     if not sys.stdout.isatty():
-        sys.stdout = open("/dev/tty", "w")
+        sys.stdout = open("/dev/tty", "w", 0)
     return stdin, stdout
