@@ -254,7 +254,6 @@ class FilterMixin(object):
         self.filterText = ""
         self._allOptions = self.options
         self._fullHeight = self.rows
-        self._refilter()
 
     def _print_menu(self):
         if self.options:
@@ -283,10 +282,8 @@ class FilterMixin(object):
         if self.filterMode:
             filtered = [(i, o) for i, o in enumerate(self._allOptions) if self.filterText.lower() in o.lower()]
             self.options = [o for i,o in filtered]
-            self._indexes = [i for i,o in filtered]
         else:
             self.options = self._allOptions
-            self._indexes = xrange(len(self._allOptions))
         self.selected = 0
         self.first = 0
 
