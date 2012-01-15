@@ -392,7 +392,7 @@ class MultiSelectMixin(object):
 
     def _on_enter(self):
         if not self.selectedItems:
-            self.selectedItems.add(self.selected)
+            self.selectedItems.add(self.options[self.selected])
         self.result = [option for option in sorted(self.selectedItems)]
         return True
 
