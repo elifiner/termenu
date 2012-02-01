@@ -1,0 +1,8 @@
+Tasks
+=====
+
+* remove mutli-column support
+* add unit tests
+* redesign for use with plugins
+* refactor code to work with plugins
+
