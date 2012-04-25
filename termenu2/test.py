@@ -12,21 +12,21 @@ class Down(unittest.TestCase):
     def test_cursor_top(self):
         menu = Termenu(OPTIONS, lines=3)
         assert strmenu(menu) == "(01) 02 03"
-        menu.down()
+        menu.on_down()
         assert strmenu(menu) == "01 (02) 03"
 
     def test_cursor_middle(self):
         menu = Termenu(OPTIONS, lines=3)
         menu.cursor = 1
         assert strmenu(menu) == "01 (02) 03"
-        menu.down()
+        menu.on_down()
         assert strmenu(menu) == "01 02 (03)"
 
     def test_cursor_bottom(self):
         menu = Termenu(OPTIONS, lines=3)
         menu.cursor = 2
         assert strmenu(menu) == "01 02 (03)"
-        menu.down()
+        menu.on_down()
         assert strmenu(menu) == "02 03 (04)"
 
     def test_scroll_bottom_cursor_bottom(self):
@@ -34,7 +34,7 @@ class Down(unittest.TestCase):
         menu.scroll = len(OPTIONS) - 3
         menu.cursor = 2
         assert strmenu(menu) == "97 98 (99)"
-        menu.down()
+        menu.on_down()
         assert strmenu(menu) == "97 98 (99)"
 
 class Up(unittest.TestCase):
@@ -42,21 +42,21 @@ class Up(unittest.TestCase):
         menu = Termenu(OPTIONS, lines=3)
         menu.cursor = 0
         assert strmenu(menu) == "(01) 02 03"
-        menu.up()
+        menu.on_up()
         assert strmenu(menu) == "(01) 02 03"
 
     def test_cursor_middle(self):
         menu = Termenu(OPTIONS, lines=3)
         menu.cursor = 1
         assert strmenu(menu) == "01 (02) 03"
-        menu.up()
+        menu.on_up()
         assert strmenu(menu) == "(01) 02 03"
 
     def test_cursor_bottom(self):
         menu = Termenu(OPTIONS, lines=3)
         menu.cursor = 2
         assert strmenu(menu) == "01 02 (03)"
-        menu.up()
+        menu.on_up()
         assert strmenu(menu) == "01 (02) 03"
 
     def test_scroll_bottom_cursor_top(self):
@@ -64,28 +64,28 @@ class Up(unittest.TestCase):
         menu.scroll = len(OPTIONS) - 3
         menu.cursor = 0
         assert strmenu(menu) == "(97) 98 99"
-        menu.up()
+        menu.on_up()
         assert strmenu(menu) == "(96) 97 98"
 
 class PageDown(unittest.TestCase):
     def test_cursor_top(self):
         menu = Termenu(OPTIONS, lines=4)
         assert strmenu(menu) == "(01) 02 03 04"
-        menu.pagedown()
+        menu.on_pageDown()
         assert strmenu(menu) == "01 02 03 (04)"
 
     def test_cursor_middle(self):
         menu = Termenu(OPTIONS, lines=4)
         menu.cursor = 1
         assert strmenu(menu) == "01 (02) 03 04"
-        menu.pagedown()
+        menu.on_pageDown()
         assert strmenu(menu) == "01 02 03 (04)"
 
     def test_cursor_bottom(self):
         menu = Termenu(OPTIONS, lines=4)
         menu.cursor = 3
         assert strmenu(menu) == "01 02 03 (04)"
-        menu.pagedown()
+        menu.on_pageDown()
         assert strmenu(menu) == "05 06 07 (08)"
 
     def test_scroll_bottom_cursor_bottom(self):
@@ -93,7 +93,7 @@ class PageDown(unittest.TestCase):
         menu.scroll = len(OPTIONS) - 4
         menu.cursor = 3
         assert strmenu(menu) == "96 97 98 (99)"
-        menu.pagedown()
+        menu.on_pageDown()
         assert strmenu(menu) == "96 97 98 (99)"
 
     def test_scroll_almost_bottom_cursor_bottom(self):
@@ -101,42 +101,42 @@ class PageDown(unittest.TestCase):
         menu.scroll = len(OPTIONS) - 5
         menu.cursor = 3
         assert strmenu(menu) == "95 96 97 (98)"
-        menu.pagedown()
+        menu.on_pageDown()
         assert strmenu(menu) == "96 97 98 (99)"
 
 class PageUp(unittest.TestCase):
     def test_cursor_top(self):
         menu = Termenu(OPTIONS, lines=4)
         assert strmenu(menu) == "(01) 02 03 04"
-        menu.pageup()
+        menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
     def test_cursor_middle(self):
         menu = Termenu(OPTIONS, lines=4)
         menu.cursor = 2
         assert strmenu(menu) == "01 02 (03) 04"
-        menu.pageup()
+        menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
     def test_cursor_bottom(self):
         menu = Termenu(OPTIONS, lines=4)
         menu.cursor = 3
         assert strmenu(menu) == "01 02 03 (04)"
-        menu.pageup()
+        menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
     def test_scroll_bottom_cursor_top(self):
         menu = Termenu(OPTIONS, lines=4)
         menu.scroll = len(OPTIONS) - 4
         assert strmenu(menu) == "(96) 97 98 99"
-        menu.pageup()
+        menu.on_pageUp()
         assert strmenu(menu) == "(92) 93 94 95"
 
     def test_scroll_almost_top_cursor_top(self):
         menu = Termenu(OPTIONS, lines=4)
         menu.scroll = 1 
         assert strmenu(menu) == "(02) 03 04 05"
-        menu.pageup()
+        menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
 if __name__ == "__main__":
