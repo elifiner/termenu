@@ -13,27 +13,27 @@ def strmenu(menu):
 
 class Down(unittest.TestCase):
     def test_cursor_top(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         assert strmenu(menu) == "(01) 02 03"
         menu.on_down()
         assert strmenu(menu) == "01 (02) 03"
 
     def test_cursor_middle(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         menu.cursor = 1
         assert strmenu(menu) == "01 (02) 03"
         menu.on_down()
         assert strmenu(menu) == "01 02 (03)"
 
     def test_cursor_bottom(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         menu.cursor = 2
         assert strmenu(menu) == "01 02 (03)"
         menu.on_down()
         assert strmenu(menu) == "02 03 (04)"
 
     def test_scroll_bottom_cursor_bottom(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         menu.scroll = len(OPTIONS) - 3
         menu.cursor = 2
         assert strmenu(menu) == "97 98 (99)"
@@ -42,28 +42,28 @@ class Down(unittest.TestCase):
 
 class Up(unittest.TestCase):
     def test_cursor_top(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         menu.cursor = 0
         assert strmenu(menu) == "(01) 02 03"
         menu.on_up()
         assert strmenu(menu) == "(01) 02 03"
 
     def test_cursor_middle(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         menu.cursor = 1
         assert strmenu(menu) == "01 (02) 03"
         menu.on_up()
         assert strmenu(menu) == "(01) 02 03"
 
     def test_cursor_bottom(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         menu.cursor = 2
         assert strmenu(menu) == "01 02 (03)"
         menu.on_up()
         assert strmenu(menu) == "01 (02) 03"
 
     def test_scroll_bottom_cursor_top(self):
-        menu = Termenu(OPTIONS, lines=3)
+        menu = Termenu(OPTIONS, height=3)
         menu.scroll = len(OPTIONS) - 3
         menu.cursor = 0
         assert strmenu(menu) == "(97) 98 99"
@@ -72,27 +72,27 @@ class Up(unittest.TestCase):
 
 class PageDown(unittest.TestCase):
     def test_cursor_top(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu.on_pageDown()
         assert strmenu(menu) == "01 02 03 (04)"
 
     def test_cursor_middle(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.cursor = 1
         assert strmenu(menu) == "01 (02) 03 04"
         menu.on_pageDown()
         assert strmenu(menu) == "01 02 03 (04)"
 
     def test_cursor_bottom(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.cursor = 3
         assert strmenu(menu) == "01 02 03 (04)"
         menu.on_pageDown()
         assert strmenu(menu) == "05 06 07 (08)"
 
     def test_scroll_bottom_cursor_bottom(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.scroll = len(OPTIONS) - 4
         menu.cursor = 3
         assert strmenu(menu) == "96 97 98 (99)"
@@ -100,7 +100,7 @@ class PageDown(unittest.TestCase):
         assert strmenu(menu) == "96 97 98 (99)"
 
     def test_scroll_almost_bottom_cursor_bottom(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.scroll = len(OPTIONS) - 5
         menu.cursor = 3
         assert strmenu(menu) == "95 96 97 (98)"
@@ -109,34 +109,34 @@ class PageDown(unittest.TestCase):
 
 class PageUp(unittest.TestCase):
     def test_cursor_top(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
     def test_cursor_middle(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.cursor = 2
         assert strmenu(menu) == "01 02 (03) 04"
         menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
     def test_cursor_bottom(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.cursor = 3
         assert strmenu(menu) == "01 02 03 (04)"
         menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
     def test_scroll_bottom_cursor_top(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.scroll = len(OPTIONS) - 4
         assert strmenu(menu) == "(96) 97 98 99"
         menu.on_pageUp()
         assert strmenu(menu) == "(92) 93 94 95"
 
     def test_scroll_almost_top_cursor_top(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         menu.scroll = 1 
         assert strmenu(menu) == "(02) 03 04 05"
         menu.on_pageUp()
@@ -144,7 +144,7 @@ class PageUp(unittest.TestCase):
 
 class MultiSelect(unittest.TestCase):
     def test_select(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu.on_space()
         menu.on_space()
@@ -153,7 +153,7 @@ class MultiSelect(unittest.TestCase):
         assert " ".join(menu.get_result()) == "01 02"
 
     def test_deselect(self):
-        menu = Termenu(OPTIONS, lines=4)
+        menu = Termenu(OPTIONS, height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu.on_space()
         menu.on_up()
@@ -176,28 +176,58 @@ def white(s):
 
 class Decorate(unittest.TestCase):
     def test_active(self):
-        menu = Termenu(OPTIONS, lines=4)
-        assert menu.decorate("text", active=True) == " " + active("text") + " "
+        menu = Termenu(OPTIONS, height=4)
+        assert menu.decorate("text", active=True) == " " + active("text") + "  "
 
     def test_selected(self):
-        menu = Termenu(OPTIONS, lines=4)
-        assert menu.decorate("text", selected=True) == "*" + selected("text") + " "
+        menu = Termenu(OPTIONS, height=4)
+        assert menu.decorate("text", selected=True) == "*" + selected("text") + "  "
 
     def test_active_selected(self):
-        menu = Termenu(OPTIONS, lines=4)
-        assert menu.decorate("text", active=True, selected=True) == "*" + active_selected("text") + " "
+        menu = Termenu(OPTIONS, height=4)
+        assert menu.decorate("text", active=True, selected=True) == "*" + active_selected("text") + "  "
 
     def test_more_above(self):
-        menu = Termenu(OPTIONS, lines=4)
-        assert menu.decorate("text", active=True, selected=True, moreAbove=True) == "*" + active_selected("text") + white("^")
+        menu = Termenu(OPTIONS, height=4)
+        assert menu.decorate("text", active=True, selected=True, moreAbove=True) == "*" + active_selected("text") + " " + white("^")
 
     def test_more_below(self):
-        menu = Termenu(OPTIONS, lines=4)
-        assert menu.decorate("text", active=True, selected=True, moreBelow=True) == "*" + active_selected("text") + white("v")
+        menu = Termenu(OPTIONS, height=4)
+        assert menu.decorate("text", active=True, selected=True, moreBelow=True) == "*" + active_selected("text") + " " + white("v")
 
     def test_max_option_len(self):
-        menu = Termenu("one three fifteen twenty eleven".split(), lines=4)
-        assert menu.decorate("three", active=True, selected=True) == "*" + active_selected("three  ") + " "
+        menu = Termenu("one three fifteen twenty eleven".split(), height=4)
+        assert menu.decorate("three", active=True, selected=True) == "*" + active_selected("three  ") + "  "
+
+class DecorateFlags(unittest.TestCase):
+    def test_active(self):
+        menu = Termenu(OPTIONS, height=4)
+        assert [menu.decorate_flags(i)["active"] for i in xrange(4)] == [True, False, False, False]
+
+    def test_selected(self):
+        menu = Termenu(OPTIONS, height=4)
+        menu.on_down()
+        menu.on_space()
+        menu.on_space()
+        assert [menu.decorate_flags(i)["selected"] for i in xrange(4)] == [False, True, True, False]
+
+    def test_more_above_none(self):
+        menu = Termenu(OPTIONS, height=4)
+        assert [menu.decorate_flags(i)["moreAbove"] for i in xrange(4)] == [False, False, False, False]
+
+    def test_more_above_one(self):
+        menu = Termenu(OPTIONS, height=4)
+        menu.scroll = 1
+        assert [menu.decorate_flags(i)["moreAbove"] for i in xrange(4)] == [True, False, False, False]
+
+    def test_more_below_one(self):
+        menu = Termenu(OPTIONS, height=4)
+        assert [menu.decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, True]
+
+    def test_more_below_none(self):
+        menu = Termenu(OPTIONS, height=4)
+        menu.scroll = len(OPTIONS) - 4
+        assert [menu.decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, False]
 
 if __name__ == "__main__":
     unittest.main()
