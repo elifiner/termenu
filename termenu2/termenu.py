@@ -141,14 +141,57 @@ class Minimenu(object):
     def get_active(self):
         return self.options[self.cursor]
 
-    def on_left(self):
-        if self.cursor < len(self.options) - 1:
-            self.cursor += 1
+    def make_menu(self, decorate=True):
+        menu = []
+        for i, item in enumerate(self.options):
+            if decorate:
+                menu.append(self.decorate(item, i == self.cursor))
+            else:
+                menu.append(item)
+        menu = " ".join(menu)
+        return menu
 
-    def on_right(self):
-        if self.cursor > 0:
-            self.cursor -= 1
+    def print_menu(self, rewind):
+        menu = self.make_menu()
+        if rewind:
+            menu = "\b"*len(self.make_menu(decorate=False)) + menu
+        sys.stdout.write(menu)
+        sys.stdout.flush()
+
+    def clear_menu(self):
+        menu = self.make_menu(decorate=False)
+        sys.stdout.write("\b"*len(menu)+" "*len(menu)+"\b"*len(menu))
+        sys.stdout.flush()
+
+    def decorate(self, item, active):
+        return ansi.colorize(item, "black", "white") if active else item
+
+    def show(self):
+        import keyboard
+        ansi.hide_cursor()
+        self.print_menu(rewind=False)
+        try:
+            for key in keyboard.keyboard_listener():
+                if key == "enter":
+                    self.clear_menu()
+                    sys.stdout.write(self.get_active())
+                    return self.get_active()
+                elif key == "esc":
+                    self.clear_menu()
+                    sys.stdout.write("<esc>")
+                    return None
+                elif key == "left":
+                    self.cursor = max(0, self.cursor - 1)
+                elif key == "right":
+                    self.cursor = min(len(self.options) - 1, self.cursor + 1)
+                self.print_menu(rewind=True)
+        finally:
+            ansi.show_cursor()
+            sys.stdout.write("\n")
 
 if __name__ == "__main__":
-    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10)
-    print menu.show()
+#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10)
+#~     print menu.show()
+    print "Would you like to continue? ",
+    result = Minimenu(["Abort", "Retry", "Fail"]).show()
+    print result
