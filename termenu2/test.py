@@ -2,14 +2,13 @@ import sys
 sys.path.append("..")
 import unittest
 import ansi
-from termenu import Termenu, Minimenu
+from termenu import Termenu
 
 OPTIONS = ["%02d" % i for i in xrange(1,100)]
+RESULTS = range(len(OPTIONS))
 
 def strmenu(menu):
-    s = " ".join(menu.get_visible_items())
-    s = s.replace(menu.get_active(), "(%s)" % menu.get_active())
-    return s
+    return menu.get_debug_view()
 
 class Down(unittest.TestCase):
     def test_cursor_top(self):
@@ -163,6 +162,21 @@ class Default(unittest.TestCase):
         menu = Termenu(OPTIONS, height=4, default="97")
         assert strmenu(menu) == "96 (97) 98 99"
 
+    def test_multiple(self):
+        menu = Termenu(OPTIONS, height=4, default=["05", "17", "93"])
+        assert strmenu(menu) == "(05) 06 07 08"
+        assert " ".join(menu.get_result()) == "05 17 93"
+
+    def test_multiple_active(self):
+        menu = Termenu(OPTIONS, height=4, default=["17", "05", "93"])
+        assert strmenu(menu) == "(17) 18 19 20"
+        assert " ".join(menu.get_result()) == "05 17 93"
+
+    def test_multiple_empty_list(self):
+        menu = Termenu(OPTIONS, height=4, default=[])
+        assert strmenu(menu) == "(01) 02 03 04"
+        assert " ".join(menu.get_result()) == "01"
+
 class MultiSelect(unittest.TestCase):
     def test_select(self):
         menu = Termenu(OPTIONS, height=4)
@@ -170,19 +184,28 @@ class MultiSelect(unittest.TestCase):
         menu.on_space()
         menu.on_space()
         assert strmenu(menu) == "01 02 (03) 04"
-        assert " ".join(menu.get_selected()) == "01 02"
+        assert " ".join(menu.get_result()) == "01 02"
         assert " ".join(menu.get_result()) == "01 02"
 
     def test_deselect(self):
         menu = Termenu(OPTIONS, height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu.on_space()
+        assert " ".join(menu.get_result()) == "01"
         menu.on_up()
-
         menu.on_space()
         assert strmenu(menu) == "01 (02) 03 04"
-        assert " ".join(menu.get_selected()) == ""
         assert " ".join(menu.get_result()) == "02"
+
+
+class Results(unittest.TestCase):
+    def test(self):
+        menu = Termenu(OPTIONS, results=RESULTS, height=4)
+        assert strmenu(menu) == "(01) 02 03 04"
+        menu.on_down()
+        menu.on_down()
+        assert strmenu(menu) == "01 02 (03) 04"
+        assert menu.get_result() == [2]
 
 def active(s):
     return ansi.colorize(s, "black", "white")

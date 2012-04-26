@@ -4,8 +4,9 @@ sys.path.append("..")
 import ansi
 
 class Termenu(object):
-    def __init__(self, options, default=None, height=None):
+    def __init__(self, options, results=None, default=None, height=None):
         self.options = options
+        self.results = results or options
         self.height = height or 10
         self.cursor = 0
         self.scroll = 0
@@ -14,8 +15,14 @@ class Termenu(object):
         self.set_default(default)
 
     def set_default(self, default):
-        try:
-            index = self.options.index(default)
+        # handle default selection of multiple items
+        if isinstance(default, list) and default:
+            self.selected = set(self.get_index(item) for item in default)
+            default = default[0]
+
+        # handle default active item
+        index = self.get_index(default)
+        if index is not None:
             if index < self.height:
                 self.cursor = index % self.height
                 self.scroll = 0
@@ -25,23 +32,30 @@ class Termenu(object):
             else:
                 self.cursor = index % self.height + 1
                 self.scroll = len(self.options) - self.height
+
+    def get_result(self):
+        if self.selected:
+            return [self.results[i] for i in sorted(self.selected)]
+        else:
+            return [self.results[self.get_active_index()]]
+
+    def get_index(self, s):
+        try:
+            return self.options.index(s)
         except ValueError:
-            return
+            return None
+
+    def get_active_index(self):
+        return self.scroll + self.cursor
 
     def get_visible_items(self):
         return self.options[self.scroll:self.scroll+self.height]
 
-    def get_active(self):
-        return self.options[self.scroll+self.cursor]
-
-    def get_selected(self):
-        return [o for i, o in enumerate(self.options) if i in self.selected]
-
-    def get_result(self):
-        if self.selected:
-            return self.get_selected()
-        else:
-            return [self.get_active()]
+    def get_debug_view(self):
+        items = []
+        for i, item in enumerate(self.get_visible_items()):
+            items.append(("(%s)" if i == self.cursor else "%s") % item)
+        return " ".join(items)
 
     def dispatch_key(self, key):
         func = "on_" + key
@@ -77,7 +91,7 @@ class Termenu(object):
             self.scroll = 0
 
     def on_space(self):
-        index = self.scroll + self.cursor
+        index = self.get_active_index()
         if index in self.selected:
             self.selected.remove(index)
         else:
@@ -202,7 +216,7 @@ def _write(s):
     sys.stdout.flush()
 
 if __name__ == "__main__":
-    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, default="option-000017")
+    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, default=["option-000019", "option-000021"])
     print menu.show()
 #~     print "Would you like to continue? ",
 #~     result = Minimenu(["Abort", "Retry", "Fail"], "Fail").show()
