@@ -289,37 +289,29 @@ class DecorateFlags(unittest.TestCase):
         assert [menu._decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, False]
 
 class Plugins(unittest.TestCase):
-    def test_allow_default(self):
-        class KeyLogger(object):
-            def __init__(self):
-                self.keys = []
+    class Plugin(object):
+        def __init__(self, prevent):
+            self.ran = False
+            self.prevent = prevent
+        def _on_key(self, key):
+            self.ran = True
+            yield self.prevent
 
-            def _on_key(self, key):
-                self.keys.append(key)
-                return None # allow default code to run 
-
-        plugin = KeyLogger()
-        menu = Termenu(OPTIONS, height=4, plugins=[plugin])
+    def test_multiple_plugins_all(self):
+        plugins = [self.Plugin(None), self.Plugin(False), self.Plugin(None)]
+        menu = Termenu(OPTIONS, height=4, plugins=plugins)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_key("down")
         assert strmenu(menu) == "01 (02) 03 04"
-        assert plugin.keys == ["down"]
+        assert [p.ran for p in plugins] == [True, True, True]
 
-    def test_prevent_default(self):
-        class OnlyKeyLogger(object):
-            def __init__(self):
-                self.keys = []
-
-            def _on_key(self, key):
-                self.keys.append(key)
-                return True # prevent default code from running
-
-        plugin = OnlyKeyLogger()
-        menu = Termenu(OPTIONS, height=4, plugins=[plugin])
+    def test_multiple_plugins_first_only(self):
+        plugins = [self.Plugin(True), self.Plugin(None), self.Plugin(None)]
+        menu = Termenu(OPTIONS, height=4, plugins=plugins)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_key("down")
         assert strmenu(menu) == "(01) 02 03 04"
-        assert plugin.keys == ["down"]
+        assert [p.ran for p in plugins] == [True, False, False]
 
 if __name__ == "__main__":
     unittest.main()

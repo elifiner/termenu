@@ -5,11 +5,25 @@ import ansi
 
 def pluggable(method):
     def _wrapped(self, *args, **kw):
+        post = []
+        # run plugin pre-processing
         for plugin in self.plugins:
-            result = getattr(plugin, method.__name__)(*args, **kw)
-            if result is not None:
-                return result
-        return method(self, *args, **kw)
+            gen = getattr(plugin, method.__name__)(*args, **kw)
+            prevent = gen.next()
+            if prevent:
+                break
+            post.append(gen)
+        # run default implementation
+        result = None
+        if not prevent:
+            result = method(self, *args, **kw)
+        # run plugin post-processing in reverse order
+        for gen in reversed(post):
+            try:
+                gen.next()
+            except StopIteration:
+                pass
+        return result
     return _wrapped
 
 class Termenu(object):
@@ -23,11 +37,14 @@ class Termenu(object):
         self.scroll = 0
         self.selected = set()
         self._maxOptionLen = max(len(o) for o in self.options)
+        self._aborted = False
         self._set_default(default)
         self._set_plugins(plugins or [])
 
     def get_result(self):
-        if self.selected:
+        if self._aborted:
+            return None
+        elif self.selected:
             return [self.results[i] for i in sorted(self.selected)]
         else:
             return [self.results[self._get_active_index()]]
@@ -39,11 +56,9 @@ class Termenu(object):
         ansi.hide_cursor()
         try:
             for key in keyboard.keyboard_listener():
-                self._on_key(key)
-                if key == "enter":
+                stop = self._on_key(key)
+                if stop:
                     return self.get_result()
-                elif key == "esc":
-                    return None
                 ansi.restore_position()
                 ansi.up(self.height)
                 self._print_menu()
@@ -140,6 +155,13 @@ class Termenu(object):
             self.selected.add(index)
         self._on_down()
 
+    def _on_esc(self):
+        self._aborted = True
+        return True # stop loop
+
+    def _on_enter(self):
+        return True # stop loop
+
     def _clear_menu(self):
         ansi.restore_position()
         for i in xrange(self.height):
@@ -147,7 +169,9 @@ class Termenu(object):
             ansi.up()
         ansi.clear_eol()
 
+    @pluggable
     def _print_menu(self):
+        _write("\r")
         for i, item in enumerate(self._get_visible_items()):
             _write(self._decorate(item, **self._decorate_flags(i)) + "\n")
 
@@ -183,14 +207,39 @@ class Termenu(object):
 
         return item
 
-class FilterPlugin(object):
+class Plugin(object):
+    def _on_key(self, key):
+        # put preprocessing here
+        yield True # True allows other plugins and default behaviour, False prevents
+        # put postprocessing here
+
+    def _print_menu(self, key):
+        yield
+
+class FilterPlugin(Plugin):
     def __init__(self):
-        self.menu = None
-        pass
+        self.text = None
 
     def _on_key(self, key):
-        # handle character keys, esc and backspace
-        pass
+        prevent = False
+        if len(key) == 1 and 32 < ord(key) <= 127:
+            if not self.text:
+                self.text = []
+            self.text.append(key)
+        elif self.text and key == "backspace":
+            del self.text[-1]
+        elif self.text and key == "esc":
+            self.text = None
+            ansi.hide_cursor()
+            prevent = True
+        yield prevent
+
+    def _print_menu(self):
+        yield
+        if self.text is not None:
+            _write("/" + "".join(self.text))
+            ansi.show_cursor()
+        ansi.clear_eol()
 
 class Minimenu(object):
     def __init__(self, options, default=None):
@@ -261,7 +310,7 @@ def redirect_std():
     return stdin, stdout
 
 if __name__ == "__main__":
-    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, default=["option-000019", "option-000021"])
+    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[FilterPlugin()])
     print menu.show()
 #~     print "Would you like to continue? ",
 #~     result = Minimenu(["Abort", "Retry", "Fail"], "Fail").show()
