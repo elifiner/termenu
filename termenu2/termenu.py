@@ -4,13 +4,29 @@ sys.path.append("..")
 import ansi
 
 class Termenu(object):
-    def __init__(self, options, height):
-        self.options = options # options in the menu
-        self.height = height   # number of height visible on screen
-        self.cursor = 0        # visible cursor position (0 is top visible option)
-        self.scroll = 0        # index of first visible option
+    def __init__(self, options, default=None, height=None):
+        self.options = options
+        self.height = height or 10
+        self.cursor = 0
+        self.scroll = 0
         self.selected = set()
         self._maxOptionLen = max(len(o) for o in self.options)
+        self.set_default(default)
+
+    def set_default(self, default):
+        try:
+            index = self.options.index(default)
+            if index < self.height:
+                self.cursor = index % self.height
+                self.scroll = 0
+            elif index + self.height < len(self.options) - 1:
+                self.cursor = 0
+                self.scroll = index
+            else:
+                self.cursor = index % self.height + 1
+                self.scroll = len(self.options) - self.height
+        except ValueError:
+            return
 
     def get_visible_items(self):
         return self.options[self.scroll:self.scroll+self.height]
@@ -77,7 +93,7 @@ class Termenu(object):
 
     def print_menu(self):
         for i, item in enumerate(self.get_visible_items()):
-            print self.decorate(item, **self.decorate_flags(i))
+            _write(self.decorate(item, **self.decorate_flags(i)) + "\n")
 
     def decorate_flags(self, i):
         return dict(
@@ -131,21 +147,18 @@ class Termenu(object):
             ansi.show_cursor()
 
 class Minimenu(object):
-    def __init__(self, options):
+    def __init__(self, options, default=None):
         self.options = options
-        self.cursor = 0
-
-    def get_visible_items(self):
-        return self.options
-
-    def get_active(self):
-        return self.options[self.cursor]
+        try:
+            self.cursor = options.index(default)
+        except ValueError:
+            self.cursor = 0
 
     def make_menu(self, decorate=True):
         menu = []
         for i, item in enumerate(self.options):
             if decorate:
-                menu.append(self.decorate(item, i == self.cursor))
+                menu.append(ansi.colorize(item, "black", "white") if i == self.cursor else item)
             else:
                 menu.append(item)
         menu = " ".join(menu)
@@ -155,16 +168,11 @@ class Minimenu(object):
         menu = self.make_menu()
         if rewind:
             menu = "\b"*len(self.make_menu(decorate=False)) + menu
-        sys.stdout.write(menu)
-        sys.stdout.flush()
+        _write(menu)
 
     def clear_menu(self):
         menu = self.make_menu(decorate=False)
-        sys.stdout.write("\b"*len(menu)+" "*len(menu)+"\b"*len(menu))
-        sys.stdout.flush()
-
-    def decorate(self, item, active):
-        return ansi.colorize(item, "black", "white") if active else item
+        _write("\b"*len(menu)+" "*len(menu)+"\b"*len(menu))
 
     def show(self):
         import keyboard
@@ -174,11 +182,11 @@ class Minimenu(object):
             for key in keyboard.keyboard_listener():
                 if key == "enter":
                     self.clear_menu()
-                    sys.stdout.write(self.get_active())
-                    return self.get_active()
+                    _write(self.options[self.cursor])
+                    return self.options[self.cursor]
                 elif key == "esc":
                     self.clear_menu()
-                    sys.stdout.write("<esc>")
+                    _write("<esc>")
                     return None
                 elif key == "left":
                     self.cursor = max(0, self.cursor - 1)
@@ -187,11 +195,15 @@ class Minimenu(object):
                 self.print_menu(rewind=True)
         finally:
             ansi.show_cursor()
-            sys.stdout.write("\n")
+            _write("\n")
+
+def _write(s):
+    sys.stdout.write(s)
+    sys.stdout.flush()
 
 if __name__ == "__main__":
-#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10)
-#~     print menu.show()
-    print "Would you like to continue? ",
-    result = Minimenu(["Abort", "Retry", "Fail"]).show()
-    print result
+    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, default="option-000017")
+    print menu.show()
+#~     print "Would you like to continue? ",
+#~     result = Minimenu(["Abort", "Retry", "Fail"], "Fail").show()
+#~     print result

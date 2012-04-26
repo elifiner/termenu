@@ -142,6 +142,27 @@ class PageUp(unittest.TestCase):
         menu.on_pageUp()
         assert strmenu(menu) == "(01) 02 03 04"
 
+class Default(unittest.TestCase):
+    def test_found(self):
+        menu = Termenu(OPTIONS, height=4, default="03")
+        assert strmenu(menu) == "01 02 (03) 04"
+
+    def test_notfount(self):
+        menu = Termenu(OPTIONS, height=4, default="asdf")
+        assert strmenu(menu) == "(01) 02 03 04"
+
+    def test_requires_scroll(self):
+        menu = Termenu(OPTIONS, height=4, default="55")
+        assert strmenu(menu) == "(55) 56 57 58"
+
+    def test_last(self):
+        menu = Termenu(OPTIONS, height=4, default="99")
+        assert strmenu(menu) == "96 97 98 (99)"
+
+    def test_before_last(self):
+        menu = Termenu(OPTIONS, height=4, default="97")
+        assert strmenu(menu) == "96 (97) 98 99"
+
 class MultiSelect(unittest.TestCase):
     def test_select(self):
         menu = Termenu(OPTIONS, height=4)
@@ -157,6 +178,7 @@ class MultiSelect(unittest.TestCase):
         assert strmenu(menu) == "(01) 02 03 04"
         menu.on_space()
         menu.on_up()
+
         menu.on_space()
         assert strmenu(menu) == "01 (02) 03 04"
         assert " ".join(menu.get_selected()) == ""
@@ -228,37 +250,6 @@ class DecorateFlags(unittest.TestCase):
         menu = Termenu(OPTIONS, height=4)
         menu.scroll = len(OPTIONS) - 4
         assert [menu.decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, False]
-
-class MinimenuTest(unittest.TestCase):
-    def test_right(self):
-        menu = Minimenu("Abort Retry Fail".split())
-        assert strmenu(menu) == "(Abort) Retry Fail"
-        menu.on_right()
-        assert strmenu(menu) == "Abort (Retry) Fail"
-
-    def test_rightmost(self):
-        menu = Minimenu("Abort Retry Fail".split())
-        menu.cursor = 2
-        assert strmenu(menu) == "Abort Retry (Fail)"
-        menu.on_right()
-        assert strmenu(menu) == "Abort Retry (Fail)"
-
-    def test_left(self):
-        menu = Minimenu("Abort Retry Fail".split())
-        menu.cursor = 2
-        assert strmenu(menu) == "Abort Retry (Fail)"
-        menu.on_left()
-        assert strmenu(menu) == "Abort (Retry) Fail"
-
-    def test_leftmost(self):
-        menu = Minimenu("Abort Retry Fail".split())
-        assert strmenu(menu) == "(Abort) Retry Fail"
-        menu.on_left()
-        assert strmenu(menu) == "(Abort) Retry Fail"
-
-    def test_make_menu(self):
-        menu = Minimenu("Abort Retry Fail".split())
-        assert menu.make_menu() == active("Abort") + " Retry Fail"
 
 if __name__ == "__main__":
     unittest.main()
