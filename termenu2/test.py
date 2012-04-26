@@ -296,7 +296,7 @@ class Plugins(unittest.TestCase):
 
             def _on_key(self, key):
                 self.keys.append(key)
-                return True # allow default code to run 
+                return None # allow default code to run 
 
         plugin = KeyLogger()
         menu = Termenu(OPTIONS, height=4, plugins=[plugin])
@@ -312,7 +312,7 @@ class Plugins(unittest.TestCase):
 
             def _on_key(self, key):
                 self.keys.append(key)
-                return False # prevent default code from running
+                return True # prevent default code from running
 
         plugin = OnlyKeyLogger()
         menu = Termenu(OPTIONS, height=4, plugins=[plugin])

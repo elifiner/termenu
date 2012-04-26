@@ -7,9 +7,9 @@ def pluggable(method):
     def _wrapped(self, *args, **kw):
         for plugin in self.plugins:
             result = getattr(plugin, method.__name__)(*args, **kw)
-            if not result:
-                return
-        method(self, *args, **kw)
+            if result is not None:
+                return result
+        return method(self, *args, **kw)
     return _wrapped
 
 class Termenu(object):
