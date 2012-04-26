@@ -29,6 +29,7 @@ def pluggable(method):
 class Termenu(object):
     def __init__(self, options, results=None, default=None, height=None, multiselect=True, plugins=None):
         self.options = options
+        self.visibleOptions = range(len(self.options))
         self.results = results or options
         self.height = min(height or 10, len(options))
         self.multiselect = multiselect
@@ -100,10 +101,10 @@ class Termenu(object):
             return None
 
     def _get_active_index(self):
-        return self.scroll + self.cursor
+        return self.visibleOptions[self.scroll + self.cursor]
 
     def _get_visible_items(self):
-        return self.options[self.scroll:self.scroll+self.height]
+        return [self.options[i] for i in self.visibleOptions[self.scroll:self.scroll+self.height]]
 
     def _get_debug_view(self):
         items = []
@@ -120,7 +121,7 @@ class Termenu(object):
     def _on_down(self):
         if self.cursor < self.height - 1:
             self.cursor += 1
-        elif self.scroll + self.height < len(self.options):
+        elif self.scroll + self.height < len(self.visibleOptions):
             self.scroll += 1
 
     def _on_up(self):
@@ -132,10 +133,10 @@ class Termenu(object):
     def _on_pageDown(self):
         if self.cursor < self.height - 1:
             self.cursor = self.height - 1
-        elif self.scroll + self.height * 2 < len(self.options):
+        elif self.scroll + self.height * 2 < len(self.visibleOptions):
             self.scroll += self.height
         else:
-            self.scroll = len(self.options) - self.height
+            self.scroll = len(self.visibleOptions) - self.height
 
     def _on_pageUp(self):
         if self.cursor > 0:
@@ -178,9 +179,9 @@ class Termenu(object):
     def _decorate_flags(self, i):
         return dict(
             active = (self.cursor == i),
-            selected = (self.scroll+i in self.selected),
+            selected = (self.visibleOptions[self.scroll+i] in self.selected),
             moreAbove = (self.scroll > 0 and i == 0),
-            moreBelow = (self.scroll + self.height < len(self.options) and i == self.height - 1),
+            moreBelow = (self.scroll + self.height < len(self.visibleOptions) and i == self.height - 1),
         )
 
     def _decorate(self, item, active=False, selected=False, moreAbove=False, moreBelow=False):
@@ -208,6 +209,7 @@ class Termenu(object):
         return item
 
 class Plugin(object):
+    # has access to self.menu
     def _on_key(self, key):
         # put preprocessing here
         yield True # True allows other plugins and default behaviour, False prevents
@@ -226,20 +228,39 @@ class FilterPlugin(Plugin):
             if not self.text:
                 self.text = []
             self.text.append(key)
+            self._refilter()
         elif self.text and key == "backspace":
             del self.text[-1]
-        elif self.text and key == "esc":
+            self._refilter()
+        elif self.text is not None and key == "esc":
             self.text = None
             ansi.hide_cursor()
             prevent = True
+            self._refilter()
         yield prevent
 
     def _print_menu(self):
         yield
+        for i in xrange(self.menu.height - len(self.menu.visibleOptions)):
+            ansi.clear_eol()
+            _write("\n")
         if self.text is not None:
             _write("/" + "".join(self.text))
             ansi.show_cursor()
         ansi.clear_eol()
+
+    def _refilter(self):
+        if self.text:
+            self.menu.visibleOptions = [i for i, o in enumerate(self.menu.options) if "".join(self.text) in o]
+        else:
+            self.menu.visibleOptions = range(len(self.menu.options))
+
+    def _set_menu(self, menu):
+        self._menu = menu
+        self._allOptions = menu.options[:]
+    def _get_menu(self):
+        return self._menu
+    menu = property(_get_menu, _set_menu)
 
 class Minimenu(object):
     def __init__(self, options, default=None):
