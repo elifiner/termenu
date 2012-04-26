@@ -5,14 +5,14 @@ import ansi
 
 class Termenu(object):
     def __init__(self, options, height):
-        self.options = options # number of options in the menu
-        self.height = height     # number of height visible on screen
+        self.options = options # options in the menu
+        self.height = height   # number of height visible on screen
         self.cursor = 0        # visible cursor position (0 is top visible option)
         self.scroll = 0        # index of first visible option
         self.selected = set()
         self._maxOptionLen = max(len(o) for o in self.options)
 
-    def get_visible_lines(self):
+    def get_visible_items(self):
         return self.options[self.scroll:self.scroll+self.height]
 
     def get_active(self):
@@ -76,8 +76,8 @@ class Termenu(object):
         ansi.clear_eol()
 
     def print_menu(self):
-        for i, line in enumerate(self.get_visible_lines()):
-            print self.decorate(line, **self.decorate_flags(i))
+        for i, item in enumerate(self.get_visible_items()):
+            print self.decorate(item, **self.decorate_flags(i))
 
     def decorate_flags(self, i):
         return dict(
@@ -87,29 +87,29 @@ class Termenu(object):
             moreBelow = (self.scroll + self.height < len(self.options) and i == self.height - 1),
         )
 
-    def decorate(self, line, active=False, selected=False, moreAbove=False, moreBelow=False):
+    def decorate(self, item, active=False, selected=False, moreAbove=False, moreBelow=False):
         # all height to same width
-        line = "{0:<{width}}".format(line, width=self._maxOptionLen)
+        item = "{0:<{width}}".format(item, width=self._maxOptionLen)
 
         # add selection / cursor decorations
         if active and selected:
-            line = "*" + ansi.colorize(line, "red", "white")
+            item = "*" + ansi.colorize(item, "red", "white")
         elif active:
-            line = " " + ansi.colorize(line, "black", "white")
+            item = " " + ansi.colorize(item, "black", "white")
         elif selected:
-            line = "*" + ansi.colorize(line, "red")
+            item = "*" + ansi.colorize(item, "red")
         else:
-            line = " " + line
+            item = " " + item
 
         # add more above/below indicators
         if moreAbove:
-            line = line + " " + ansi.colorize("^", "white", bright=True)
+            item = item + " " + ansi.colorize("^", "white", bright=True)
         elif moreBelow:
-            line = line + " " + ansi.colorize("v", "white", bright=True)
+            item = item + " " + ansi.colorize("v", "white", bright=True)
         else:
-            line = line + "  "
+            item = item + "  "
 
-        return line
+        return item
 
     def show(self):
         import keyboard
@@ -129,6 +129,25 @@ class Termenu(object):
         finally:
             self.clear_menu()
             ansi.show_cursor()
+
+class Minimenu(object):
+    def __init__(self, options):
+        self.options = options
+        self.cursor = 0
+
+    def get_visible_items(self):
+        return self.options
+
+    def get_active(self):
+        return self.options[self.cursor]
+
+    def on_left(self):
+        if self.cursor < len(self.options) - 1:
+            self.cursor += 1
+
+    def on_right(self):
+        if self.cursor > 0:
+            self.cursor -= 1
 
 if __name__ == "__main__":
     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10)

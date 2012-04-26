@@ -2,12 +2,12 @@ import sys
 sys.path.append("..")
 import unittest
 import ansi
-from termenu import Termenu
+from termenu import Termenu, Minimenu
 
 OPTIONS = ["%02d" % i for i in xrange(1,100)]
 
 def strmenu(menu):
-    s = " ".join(menu.get_visible_lines())
+    s = " ".join(menu.get_visible_items())
     s = s.replace(menu.get_active(), "(%s)" % menu.get_active())
     return s
 
@@ -228,6 +228,33 @@ class DecorateFlags(unittest.TestCase):
         menu = Termenu(OPTIONS, height=4)
         menu.scroll = len(OPTIONS) - 4
         assert [menu.decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, False]
+
+class MinimenuTest(unittest.TestCase):
+    def test_left(self):
+        menu = Minimenu("Abort Retry Fail".split())
+        assert strmenu(menu) == "(Abort) Retry Fail"
+        menu.on_left()
+        assert strmenu(menu) == "Abort (Retry) Fail"
+
+    def test_leftmost(self):
+        menu = Minimenu("Abort Retry Fail".split())
+        menu.cursor = 2
+        assert strmenu(menu) == "Abort Retry (Fail)"
+        menu.on_left()
+        assert strmenu(menu) == "Abort Retry (Fail)"
+
+    def test_right(self):
+        menu = Minimenu("Abort Retry Fail".split())
+        menu.cursor = 2
+        assert strmenu(menu) == "Abort Retry (Fail)"
+        menu.on_right()
+        assert strmenu(menu) == "Abort (Retry) Fail"
+
+    def test_rightmost(self):
+        menu = Minimenu("Abort Retry Fail".split())
+        assert strmenu(menu) == "(Abort) Retry Fail"
+        menu.on_right()
+        assert strmenu(menu) == "(Abort) Retry Fail"
 
 if __name__ == "__main__":
     unittest.main()
