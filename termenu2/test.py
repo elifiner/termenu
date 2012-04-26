@@ -288,5 +288,38 @@ class DecorateFlags(unittest.TestCase):
         menu.scroll = len(OPTIONS) - 4
         assert [menu._decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, False]
 
+class Plugins(unittest.TestCase):
+    def test_allow_default(self):
+        class KeyLogger(object):
+            def __init__(self):
+                self.keys = []
+
+            def _on_key(self, key):
+                self.keys.append(key)
+                return True # allow default code to run 
+
+        plugin = KeyLogger()
+        menu = Termenu(OPTIONS, height=4, plugins=[plugin])
+        assert strmenu(menu) == "(01) 02 03 04"
+        menu._on_key("down")
+        assert strmenu(menu) == "01 (02) 03 04"
+        assert plugin.keys == ["down"]
+
+    def test_prevent_default(self):
+        class OnlyKeyLogger(object):
+            def __init__(self):
+                self.keys = []
+
+            def _on_key(self, key):
+                self.keys.append(key)
+                return False # prevent default code from running
+
+        plugin = OnlyKeyLogger()
+        menu = Termenu(OPTIONS, height=4, plugins=[plugin])
+        assert strmenu(menu) == "(01) 02 03 04"
+        menu._on_key("down")
+        assert strmenu(menu) == "(01) 02 03 04"
+        assert plugin.keys == ["down"]
+
 if __name__ == "__main__":
     unittest.main()

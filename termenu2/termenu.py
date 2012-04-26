@@ -3,17 +3,28 @@ sys.path.append("..")
 
 import ansi
 
+def pluggable(method):
+    def _wrapped(self, *args, **kw):
+        for plugin in self.plugins:
+            result = getattr(plugin, method.__name__)(*args, **kw)
+            if not result:
+                return
+        method(self, *args, **kw)
+    return _wrapped
+
 class Termenu(object):
-    def __init__(self, options, results=None, default=None, height=None, multiselect=True):
+    def __init__(self, options, results=None, default=None, height=None, multiselect=True, plugins=None):
         self.options = options
         self.results = results or options
         self.height = min(height or 10, len(options))
         self.multiselect = multiselect
+        self.plugins = []
         self.cursor = 0
         self.scroll = 0
         self.selected = set()
         self._maxOptionLen = max(len(o) for o in self.options)
         self._set_default(default)
+        self._set_plugins(plugins or [])
 
     def get_result(self):
         if self.selected:
@@ -28,7 +39,7 @@ class Termenu(object):
         ansi.hide_cursor()
         try:
             for key in keyboard.keyboard_listener():
-                self._dispatch(key)
+                self._on_key(key)
                 if key == "enter":
                     return self.get_result()
                 elif key == "esc":
@@ -61,6 +72,12 @@ class Termenu(object):
                 self.cursor = index % self.height + 1
                 self.scroll = len(self.options) - self.height
 
+    def _set_plugins(self, plugins):
+        self.plugins = []
+        for plugin in plugins:
+            plugin.menu = self
+            self.plugins.append(plugin)
+
     def _get_index(self, s):
         try:
             return self.options.index(s)
@@ -79,7 +96,8 @@ class Termenu(object):
             items.append(("(%s)" if i == self.cursor else "%s") % item)
         return " ".join(items)
 
-    def _dispatch(self, key):
+    @pluggable
+    def _on_key(self, key):
         func = "_on_" + key
         if hasattr(self, func):
             return getattr(self, func)()
@@ -164,6 +182,15 @@ class Termenu(object):
             item = item + "  "
 
         return item
+
+class FilterPlugin(object):
+    def __init__(self):
+        self.menu = None
+        pass
+
+    def _on_key(self, key):
+        # handle character keys, esc and backspace
+        pass
 
 class Minimenu(object):
     def __init__(self, options, default=None):
