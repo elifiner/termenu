@@ -4,10 +4,11 @@ sys.path.append("..")
 import ansi
 
 class Termenu(object):
-    def __init__(self, options, results=None, default=None, height=None):
+    def __init__(self, options, results=None, default=None, height=None, multiselect=True):
         self.options = options
         self.results = results or options
         self.height = height or 10
+        self.multiselect = multiselect
         self.cursor = 0
         self.scroll = 0
         self.selected = set()
@@ -42,6 +43,8 @@ class Termenu(object):
     def _set_default(self, default):
         # handle default selection of multiple items
         if isinstance(default, list) and default:
+            if not self.multiselect:
+                raise ValueError("multiple defaults passed, but multiselect is False")
             self.selected = set(self._get_index(item) for item in default)
             default = default[0]
 
@@ -110,6 +113,8 @@ class Termenu(object):
             self.scroll = 0
 
     def _on_space(self):
+        if not self.multiselect:
+            return
         index = self._get_active_index()
         if index in self.selected:
             self.selected.remove(index)
@@ -214,6 +219,19 @@ class Minimenu(object):
 def _write(s):
     sys.stdout.write(s)
     sys.stdout.flush()
+
+def redirect_std():
+    """
+    Connect stdin/stdout to controlling terminal even if the scripts input and output
+    were redirected. This is useful in utilities based on termenu.
+    """
+    stdin = sys.stdin
+    stdout = sys.stdout
+    if not sys.stdin.isatty():
+        sys.stdin = open("/dev/tty", "r", 0)
+    if not sys.stdout.isatty():
+        sys.stdout = open("/dev/tty", "w", 0)
+    return stdin, stdout
 
 if __name__ == "__main__":
     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, default=["option-000019", "option-000021"])

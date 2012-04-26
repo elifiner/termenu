@@ -5,7 +5,7 @@ import ansi
 from termenu import Termenu
 
 OPTIONS = ["%02d" % i for i in xrange(1,100)]
-RESULTS = range(len(OPTIONS))
+RESULTS = ["result-%02d" % i for i in xrange(1,100)]
 
 def strmenu(menu):
     return menu._get_debug_view()
@@ -197,15 +197,29 @@ class MultiSelect(unittest.TestCase):
         assert strmenu(menu) == "01 (02) 03 04"
         assert " ".join(menu.get_result()) == "02"
 
+    def test_off(self):
+        menu = Termenu(OPTIONS, height=4, multiselect=False)
+        assert strmenu(menu) == "(01) 02 03 04"
+        menu._on_space()
+        assert strmenu(menu) == "(01) 02 03 04"
+        assert " ".join(menu.get_result()) == "01"
 
 class Results(unittest.TestCase):
-    def test(self):
+    def test_single(self):
         menu = Termenu(OPTIONS, results=RESULTS, height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_down()
         menu._on_down()
         assert strmenu(menu) == "01 02 (03) 04"
-        assert menu.get_result() == [2]
+        assert menu.get_result() == ["result-03"]
+
+    def test_multiple(self):
+        menu = Termenu(OPTIONS, results=RESULTS, height=4)
+        assert strmenu(menu) == "(01) 02 03 04"
+        menu._on_space()
+        menu._on_space()
+        assert strmenu(menu) == "01 02 (03) 04"
+        assert menu.get_result() == ["result-01", "result-02"]
 
 def active(s):
     return ansi.colorize(s, "black", "white")
