@@ -313,11 +313,5 @@ class Plugins(unittest.TestCase):
         assert strmenu(menu) == "(01) 02 03 04"
         assert [p.ran for p in plugins] == [True, False, False]
 
-class Filtering(unittest.TestCase):
-    def test(self):
-        menu = Termenu(OPTIONS, height=4)
-        del menu.visibleOptions[2:4]
-        assert strmenu(menu) == "(01) 02 05 06"
-
 if __name__ == "__main__":
     unittest.main()

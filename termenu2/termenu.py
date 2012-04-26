@@ -27,16 +27,23 @@ def pluggable(method):
     return _wrapped
 
 class Termenu(object):
+    class Option(object):
+        def __init__(self, text, result):
+            self.text = text
+            self.result = result
+            self.selected = False
+        def __str__(self):
+            return self.text
+        def __len__(self):
+            return len(self.text)
+
     def __init__(self, options, results=None, default=None, height=None, multiselect=True, plugins=None):
-        self.options = options
-        self.visibleOptions = range(len(self.options))
-        self.results = results or options
+        self.options = [self.Option(o, r) for o, r in zip(options, results or options)]
         self.height = min(height or 10, len(options))
         self.multiselect = multiselect
         self.plugins = []
         self.cursor = 0
         self.scroll = 0
-        self.selected = set()
         self._maxOptionLen = max(len(o) for o in self.options)
         self._aborted = False
         self._set_default(default)
@@ -45,10 +52,11 @@ class Termenu(object):
     def get_result(self):
         if self._aborted:
             return None
-        elif self.selected:
-            return [self.results[i] for i in sorted(self.selected)]
         else:
-            return [self.results[self._get_active_index()]]
+            selected = [o.result for o in self.options if o.selected]
+            if not selected:
+                selected.append(self._get_active_option().result)
+            return selected
 
     def show(self):
         import keyboard
@@ -68,14 +76,16 @@ class Termenu(object):
             ansi.show_cursor()
 
     def _set_default(self, default):
-        # handle default selection of multiple items
+        # handle default selection of multiple options
         if isinstance(default, list) and default:
             if not self.multiselect:
                 raise ValueError("multiple defaults passed, but multiselect is False")
-            self.selected = set(self._get_index(item) for item in default)
+            for option in self.options:
+                if str(option) in default:
+                    option.selected = True
             default = default[0]
 
-        # handle default active item
+        # handle default active option
         index = self._get_index(default)
         if index is not None:
             if index < self.height:
@@ -95,22 +105,23 @@ class Termenu(object):
             self.plugins.append(plugin)
 
     def _get_index(self, s):
-        try:
-            return self.options.index(s)
-        except ValueError:
+        matches = [i for i, o in enumerate(self.options) if str(o) == s]
+        if matches:
+            return matches[0]
+        else:
             return None
 
-    def _get_active_index(self):
-        return self.visibleOptions[self.scroll + self.cursor]
+    def _get_active_option(self):
+        return self.options[self.scroll+self.cursor] if self.options else None
 
-    def _get_visible_items(self):
-        return [self.options[i] for i in self.visibleOptions[self.scroll:self.scroll+self.height]]
+    def _get_window(self):
+        return self.options[self.scroll:self.scroll+self.height]
 
     def _get_debug_view(self):
-        items = []
-        for i, item in enumerate(self._get_visible_items()):
-            items.append(("(%s)" if i == self.cursor else "%s") % item)
-        return " ".join(items)
+        options = []
+        for i, option in enumerate(self._get_window()):
+            options.append(("(%s)" if i == self.cursor else "%s") % option)
+        return " ".join(options)
 
     @pluggable
     def _on_key(self, key):
@@ -121,7 +132,7 @@ class Termenu(object):
     def _on_down(self):
         if self.cursor < self.height - 1:
             self.cursor += 1
-        elif self.scroll + self.height < len(self.visibleOptions):
+        elif self.scroll + self.height < len(self.options):
             self.scroll += 1
 
     def _on_up(self):
@@ -133,10 +144,10 @@ class Termenu(object):
     def _on_pageDown(self):
         if self.cursor < self.height - 1:
             self.cursor = self.height - 1
-        elif self.scroll + self.height * 2 < len(self.visibleOptions):
+        elif self.scroll + self.height * 2 < len(self.options):
             self.scroll += self.height
         else:
-            self.scroll = len(self.visibleOptions) - self.height
+            self.scroll = len(self.options) - self.height
 
     def _on_pageUp(self):
         if self.cursor > 0:
@@ -149,11 +160,8 @@ class Termenu(object):
     def _on_space(self):
         if not self.multiselect:
             return
-        index = self._get_active_index()
-        if index in self.selected:
-            self.selected.remove(index)
-        else:
-            self.selected.add(index)
+        option = self._get_active_option()
+        option.selected = not option.selected
         self._on_down()
 
     def _on_esc(self):
@@ -173,46 +181,46 @@ class Termenu(object):
     @pluggable
     def _print_menu(self):
         _write("\r")
-        for i, item in enumerate(self._get_visible_items()):
-            _write(self._decorate(item, **self._decorate_flags(i)) + "\n")
+        for i, option in enumerate(self._get_window()):
+            _write(self._decorate(option, **self._decorate_flags(i)) + "\n")
 
     def _decorate_flags(self, i):
         return dict(
             active = (self.cursor == i),
-            selected = (self.visibleOptions[self.scroll+i] in self.selected),
+            selected = (self.options[self.scroll+i].selected),
             moreAbove = (self.scroll > 0 and i == 0),
-            moreBelow = (self.scroll + self.height < len(self.visibleOptions) and i == self.height - 1),
+            moreBelow = (self.scroll + self.height < len(self.options) and i == self.height - 1),
         )
 
-    def _decorate(self, item, active=False, selected=False, moreAbove=False, moreBelow=False):
+    def _decorate(self, option, active=False, selected=False, moreAbove=False, moreBelow=False):
         # all height to same width
-        item = "{0:<{width}}".format(item, width=self._maxOptionLen)
+        option = "{0:<{width}}".format(option, width=self._maxOptionLen)
 
         # add selection / cursor decorations
         if active and selected:
-            item = "*" + ansi.colorize(item, "red", "white")
+            option = "*" + ansi.colorize(option, "red", "white")
         elif active:
-            item = " " + ansi.colorize(item, "black", "white")
+            option = " " + ansi.colorize(option, "black", "white")
         elif selected:
-            item = "*" + ansi.colorize(item, "red")
+            option = "*" + ansi.colorize(option, "red")
         else:
-            item = " " + item
+            option = " " + option
 
         # add more above/below indicators
         if moreAbove:
-            item = item + " " + ansi.colorize("^", "white", bright=True)
+            option = option + " " + ansi.colorize("^", "white", bright=True)
         elif moreBelow:
-            item = item + " " + ansi.colorize("v", "white", bright=True)
+            option = option + " " + ansi.colorize("v", "white", bright=True)
         else:
-            item = item + "  "
+            option = option + "  "
 
-        return item
+        return option
 
 class Plugin(object):
     # has access to self.menu
     def _on_key(self, key):
         # put preprocessing here
-        yield True # True allows other plugins and default behaviour, False prevents
+        yield # yield True will prevent other plugins from processing this function
         # put postprocessing here
 
     def _print_menu(self, key):
@@ -237,11 +245,13 @@ class FilterPlugin(Plugin):
             ansi.hide_cursor()
             prevent = True
             self._refilter()
+
         yield prevent
 
     def _print_menu(self):
         yield
-        for i in xrange(self.menu.height - len(self.menu.visibleOptions)):
+
+        for i in xrange(0, self.menu.height - len(self.menu.options)):
             ansi.clear_eol()
             _write("\n")
         if self.text is not None:
@@ -250,11 +260,16 @@ class FilterPlugin(Plugin):
         ansi.clear_eol()
 
     def _refilter(self):
-        if self.text:
-            self.menu.visibleOptions = [i for i, o in enumerate(self.menu.options) if "".join(self.text) in o]
-        else:
-            self.menu.visibleOptions = range(len(self.menu.options))
+        self.menu.options = []
+        text = "".join(self.text or []).lower()
+        for option in self._allOptions:
+            if text in str(option).lower():
+                self.menu.options.append(option)
+        #FIXME: it would be better to keep the selection
+        self.menu.cursor = 0
+        self.menu.scroll = 0
 
+    #FIXME: perhaps an attach() plugin method called by Termenu would be cleaner
     def _set_menu(self, menu):
         self._menu = menu
         self._allOptions = menu.options[:]
@@ -295,11 +310,11 @@ class Minimenu(object):
 
     def _make_menu(self, _decorate=True):
         menu = []
-        for i, item in enumerate(self.options):
+        for i, option in enumerate(self.options):
             if _decorate:
-                menu.append(ansi.colorize(item, "black", "white") if i == self.cursor else item)
+                menu.append(ansi.colorize(option, "black", "white") if i == self.cursor else option)
             else:
-                menu.append(item)
+                menu.append(option)
         menu = " ".join(menu)
         return menu
 
