@@ -7,7 +7,7 @@ class Termenu(object):
     def __init__(self, options, results=None, default=None, height=None, multiselect=True):
         self.options = options
         self.results = results or options
-        self.height = height or 10
+        self.height = min(height or 10, len(options))
         self.multiselect = multiselect
         self.cursor = 0
         self.scroll = 0
