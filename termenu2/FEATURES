@@ -1,0 +1,18 @@
+Future Features
+===============
+
+V (builtin) default selection
+V (builtin) return objects instead of menu names
+* (builtin) filtering by typing
+* (builtin) backward compatible show_menu
+* (builtin) limit size (to terminal width / height)
+* (plugin) inner headlines (for gitter)
+* (plugin) readline-style editing on the filtering line
+* (plugin) precolored menu items
+* (derived) multi column display (for file menu and gitter)
+V micro menu (for yes/no choices)
+
+Tasks
+=====
+
+* write documentation
