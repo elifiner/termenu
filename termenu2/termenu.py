@@ -279,11 +279,14 @@ class FilterPlugin(Plugin):
 
 class HeaderPlugin(Plugin):
     #FIXME: doesn't work with filtering (headers dissapear)
+    #FIXME: if I can't make HeaderPlugin work, perhaps the whole plugin idea is misguided
     def __init__(self, headers):
         self.headers = headers
 
     def attach(self, menu):
         Plugin.attach(self, menu)
+        for option in self.menu.options:
+            option
         options = []
         for i, option in enumerate(self.menu.options):
             if i in self.headers:
