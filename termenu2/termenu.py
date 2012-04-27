@@ -131,9 +131,10 @@ class Termenu(object):
             return getattr(self, func)()
 
     def _on_down(self):
-        if self.cursor < self.height - 1:
+        height = min(self.height, len(self.options))
+        if self.cursor < height - 1:
             self.cursor += 1
-        elif self.scroll + self.height < len(self.options):
+        elif self.scroll + height < len(self.options):
             self.scroll += 1
 
     def _on_up(self):
@@ -143,18 +144,20 @@ class Termenu(object):
             self.scroll -= 1
 
     def _on_pageDown(self):
-        if self.cursor < self.height - 1:
-            self.cursor = self.height - 1
-        elif self.scroll + self.height * 2 < len(self.options):
-            self.scroll += self.height
+        height = min(self.height, len(self.options))
+        if self.cursor < height - 1:
+            self.cursor = height - 1
+        elif self.scroll + height * 2 < len(self.options):
+            self.scroll += height
         else:
-            self.scroll = len(self.options) - self.height
+            self.scroll = len(self.options) - height
 
     def _on_pageUp(self):
+        height = min(self.height, len(self.options))
         if self.cursor > 0:
             self.cursor = 0
-        elif self.scroll - self.height >= 0:
-            self.scroll -= self.height
+        elif self.scroll - height >= 0:
+            self.scroll -= height
         else:
             self.scroll = 0
 

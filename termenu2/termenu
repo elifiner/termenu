@@ -53,7 +53,11 @@ Examples:
     if options.one and len(items) == 1:
         results = [items[0]]
     else:
-        results = termenu.Termenu(items, default=options.default, height=options.rows, multiselect=options.multiselect).show()
+        results = termenu.Termenu(items, 
+            default=options.default, 
+            height=options.rows, 
+            multiselect=options.multiselect, 
+            plugins=[termenu.FilterPlugin()]).show()
 
     if results:
         redirectedStdout.write("\n".join(results) + "\n")
