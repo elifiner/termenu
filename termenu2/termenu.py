@@ -6,6 +6,7 @@ import ansi
 def pluggable(method):
     def _wrapped(self, *args, **kw):
         post = []
+        prevent = False
         # run plugin pre-processing
         for plugin in self.plugins:
             gen = getattr(plugin, method.__name__)(*args, **kw)
