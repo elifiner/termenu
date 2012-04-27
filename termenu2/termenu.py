@@ -29,10 +29,11 @@ def pluggable(method):
 
 class Termenu(object):
     class Option(object):
-        def __init__(self, text, result):
+        def __init__(self, text, result, **attrs):
             self.text = text
             self.result = result
             self.selected = False
+            self.attrs = attrs
         def __str__(self):
             return self.text
         def __len__(self):
@@ -182,6 +183,7 @@ class Termenu(object):
         _write("\r")
         for i, option in enumerate(self._get_window()):
             _write(self._decorate(option, **self._decorate_flags(i)) + "\n")
+            ansi.clear_eol()
 
     def _decorate_flags(self, i):
         return dict(
@@ -225,7 +227,7 @@ class Plugin(object):
         yield # yield True will prevent other plugins from processing this function
         # put postprocessing here
 
-    def _print_menu(self, key):
+    def _print_menu(self):
         yield
 
 class FilterPlugin(Plugin):
@@ -276,8 +278,31 @@ class FilterPlugin(Plugin):
         self._allOptions = menu.options[:]
 
 class HeaderPlugin(Plugin):
+    #FIXME: doesn't work with filtering (headers dissapear)
     def __init__(self, headers):
         self.headers = headers
+
+    def attach(self, menu):
+        Plugin.attach(self, menu)
+        options = []
+        for i, option in enumerate(self.menu.options):
+            if i in self.headers:
+                options.append(self.menu.Option(self.headers[i], result=None, header=True))
+            options.append(option)
+        self.menu.options = options
+        if self.menu._get_active_option().attrs.get("header", False):
+            self.menu._on_down()
+
+    def _on_key(self, key):
+        prev = self.menu.cursor
+        yield
+        if self.menu._get_active_option().attrs.get("header", False):
+            if self.menu.scroll + self.menu.cursor == 0:
+                self.menu._on_down()
+            elif self.menu.cursor > prev:
+                self.menu._on_down()
+            elif self.menu.cursor < prev:
+                self.menu._on_up()
 
 class Minimenu(object):
     def __init__(self, options, default=None):
@@ -348,7 +373,8 @@ def redirect_std():
     return stdin, stdout
 
 if __name__ == "__main__":
-    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[FilterPlugin()])
+#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[FilterPlugin()])
+    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"})])
     print menu.show()
 #~     print "Would you like to continue? ",
 #~     result = Minimenu(["Abort", "Retry", "Fail"], "Fail").show()
