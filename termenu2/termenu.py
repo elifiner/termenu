@@ -144,6 +144,7 @@ class Termenu(object):
             self.scroll -= 1
 
     def _on_pageDown(self):
+        #FIXME: make a function/property for actual height
         height = min(self.height, len(self.options))
         if self.cursor < height - 1:
             self.cursor = height - 1
