@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 import unittest
 import ansi
-from termenu import Termenu
+from termenu import Termenu, FilterPlugin
 
 OPTIONS = ["%02d" % i for i in xrange(1,100)]
 RESULTS = ["result-%02d" % i for i in xrange(1,100)]
@@ -312,6 +312,38 @@ class Plugins(unittest.TestCase):
         menu._on_key("down")
         assert strmenu(menu) == "(01) 02 03 04"
         assert [p.ran for p in plugins] == [True, False, False]
+
+class FilterPluginTest(unittest.TestCase):
+    def test_filter(self):
+        menu = Termenu(OPTIONS, height=4, plugins=[FilterPlugin()])
+        menu._on_key("4")
+        assert strmenu(menu) == "(04) 14 24 34"
+
+    def test_case_insensitive(self):
+        menu = Termenu("ONE TWO THREE FOUR FIVE SIX SEVEN".split(), height=4, plugins=[FilterPlugin()])
+        menu._on_key("e")
+        assert strmenu(menu) == "(ONE) THREE FIVE SEVEN"
+
+    def test_backspace(self):
+        menu = Termenu("one two three four five six seven".split(), height=4, plugins=[FilterPlugin()])
+        assert strmenu(menu) == "(one) two three four"
+        menu._on_key("e")
+        assert strmenu(menu) == "(one) three five seven"
+        menu._on_key("n")
+        assert strmenu(menu) == "(seven)"
+        menu._on_key("backspace")
+        assert strmenu(menu) == "(one) three five seven"
+        menu._on_key("backspace")
+        assert strmenu(menu) == "(one) two three four"
+
+    def test_esc(self):
+        menu = Termenu("one two three four five six seven".split(), height=4, plugins=[FilterPlugin()])
+        assert strmenu(menu) == "(one) two three four"
+        menu._on_key("e")
+        menu._on_key("n")
+        assert strmenu(menu) == "(seven)"
+        menu._on_key("esc")
+        assert strmenu(menu) == "(one) two three four"
 
 if __name__ == "__main__":
     unittest.main()
