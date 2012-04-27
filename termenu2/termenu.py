@@ -42,13 +42,14 @@ class Termenu(object):
         self.options = [self.Option(o, r) for o, r in zip(options, results or options)]
         self.height = min(height or 10, len(options))
         self.multiselect = multiselect
-        self.plugins = []
+        self.plugins = plugins or []
         self.cursor = 0
         self.scroll = 0
         self._maxOptionLen = max(len(o) for o in self.options)
         self._aborted = False
         self._set_default(default)
-        self._set_plugins(plugins or [])
+        for plugin in self.plugins:
+            plugin.attach(self)
 
     def get_result(self):
         if self._aborted:
@@ -98,12 +99,6 @@ class Termenu(object):
             else:
                 self.cursor = index % self.height + 1
                 self.scroll = len(self.options) - self.height
-
-    def _set_plugins(self, plugins):
-        self.plugins = []
-        for plugin in plugins:
-            plugin.menu = self
-            self.plugins.append(plugin)
 
     def _get_index(self, s):
         matches = [i for i, o in enumerate(self.options) if str(o) == s]
@@ -221,7 +216,10 @@ class Termenu(object):
         return option
 
 class Plugin(object):
-    # has access to self.menu
+    # attach to a Termenu object
+    def attach(self, menu):
+        self.menu = menu
+
     def _on_key(self, key):
         # put preprocessing here
         yield # yield True will prevent other plugins from processing this function
@@ -273,13 +271,13 @@ class FilterPlugin(Plugin):
         self.menu.cursor = 0
         self.menu.scroll = 0
 
-    #FIXME: perhaps an attach() plugin method called by Termenu would be cleaner
-    def _set_menu(self, menu):
-        self._menu = menu
+    def attach(self, menu):
+        Plugin.attach(self, menu)
         self._allOptions = menu.options[:]
-    def _get_menu(self):
-        return self._menu
-    menu = property(_get_menu, _set_menu)
+
+class HeaderPlugin(Plugin):
+    def __init__(self, headers):
+        self.headers = headers
 
 class Minimenu(object):
     def __init__(self, options, default=None):

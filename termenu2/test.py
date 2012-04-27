@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 import unittest
 import ansi
-from termenu import Termenu, FilterPlugin
+from termenu import Termenu, Plugin, FilterPlugin
 
 OPTIONS = ["%02d" % i for i in xrange(1,100)]
 RESULTS = ["result-%02d" % i for i in xrange(1,100)]
@@ -289,7 +289,7 @@ class DecorateFlags(unittest.TestCase):
         assert [menu._decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, False]
 
 class Plugins(unittest.TestCase):
-    class Plugin(object):
+    class SamplePlugin(Plugin):
         def __init__(self, prevent):
             self.ran = False
             self.prevent = prevent
@@ -298,7 +298,7 @@ class Plugins(unittest.TestCase):
             yield self.prevent
 
     def test_multiple_plugins_all(self):
-        plugins = [self.Plugin(None), self.Plugin(False), self.Plugin(None)]
+        plugins = [self.SamplePlugin(None), self.SamplePlugin(False), self.SamplePlugin(None)]
         menu = Termenu(OPTIONS, height=4, plugins=plugins)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_key("down")
@@ -306,7 +306,7 @@ class Plugins(unittest.TestCase):
         assert [p.ran for p in plugins] == [True, True, True]
 
     def test_multiple_plugins_first_only(self):
-        plugins = [self.Plugin(True), self.Plugin(None), self.Plugin(None)]
+        plugins = [self.SamplePlugin(True), self.SamplePlugin(None), self.SamplePlugin(None)]
         menu = Termenu(OPTIONS, height=4, plugins=plugins)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_key("down")
