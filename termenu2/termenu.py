@@ -4,6 +4,7 @@ sys.path.append("..")
 import ansi
 
 def pluggable(method):
+    # FIXME: remove the need for "stack" parameter to all overrides
     """
     Marks a method to be extendable via plugins.
     When the method is called, the last installed plugin will be called and the 
@@ -157,6 +158,7 @@ class Termenu(object):
         else:
             self.scroll = 0
 
+    @pluggable
     def _on_space(self):
         if not self.multiselect:
             return
@@ -182,17 +184,20 @@ class Termenu(object):
     @pluggable
     def _print_menu(self):
         _write("\r")
-        for i, option in enumerate(self._get_window()):
-            _write(self._decorate(option, **self._decorate_flags(i)) + "\n")
+        for index, option in enumerate(self._get_window()):
+            # all height to same width
+            option = "{0:<{width}}".format(option, width=self._maxOptionLen)
+
+            _write(self._decorate(option, **self._decorate_flags(index)) + "\n")
             ansi.clear_eol()
 
     @pluggable
-    def _decorate_flags(self, i):
+    def _decorate_flags(self, index):
         return dict(
-            active = (self.cursor == i),
-            selected = (self.options[self.scroll+i].selected),
-            moreAbove = (self.scroll > 0 and i == 0),
-            moreBelow = (self.scroll + self.height < len(self.options) and i == self.height - 1),
+            active = (self.cursor == index),
+            selected = (self.options[self.scroll+index].selected),
+            moreAbove = (self.scroll > 0 and index == 0),
+            moreBelow = (self.scroll + self.height < len(self.options) and index == self.height - 1),
         )
 
     @pluggable
@@ -201,9 +206,6 @@ class Termenu(object):
         selected = flags.get("selected", False)
         moreAbove = flags.get("moreAbove", False)
         moreBelow = flags.get("moreBelow", False)
-
-        # all height to same width
-        option = "{0:<{width}}".format(option, width=self._maxOptionLen)
 
         # add selection / cursor decorations
         if active and selected:
@@ -229,13 +231,6 @@ class Plugin(object):
     # attach to a Termenu object
     def attach(self, menu):
         self.menu = menu
-
-#~     def _on_key(self, stack, key):
-#~         return call_previous(stack, key)
-#~ 
-#~     def _print_menu(self, stack):
-#~         return call_previous(stack)
-
 
 class FilterPlugin(Plugin):
     def __init__(self):
@@ -305,6 +300,29 @@ class HeaderPlugin(Plugin):
         else:
             return call_previous(stack)
 
+    def _on_space(self, stack):
+        if self.menu._get_active_option().attrs.get("header"):
+            self.menu._on_down()
+        else:
+            call_previous(stack)
+
+    def _decorate_flags(self, stack, index):
+        flags = call_previous(stack, index)
+        flags["header"] = self.menu.options[self.menu.scroll+index].attrs.get("header")
+        return flags
+
+    def _decorate(self, stack, option, **flags):
+        active = flags.get("active", False)
+        header = flags.get("header", False)
+        if header:
+            if active:
+                option = " " + ansi.colorize(option, "white", "black", bright=True)
+            else:
+                option = " " + ansi.colorize(option, "white", bright=True)
+            return option
+        else:
+            return call_previous(stack, option, **flags)
+
 class Minimenu(object):
     def __init__(self, options, default=None):
         self.options = options
@@ -349,11 +367,11 @@ class Minimenu(object):
     def _print_menu(self, rewind):
         menu = self._make_menu()
         if rewind:
-            menu = "\b"*len(self._make_menu(decorate=False)) + menu
+            menu = "\b"*len(self._make_menu(_decorate=False)) + menu
         _write(menu)
 
     def _clear_menu(self):
-        menu = self._make_menu(decorate=False)
+        menu = self._make_menu(_decorate=False)
         _write("\b"*len(menu)+" "*len(menu)+"\b"*len(menu))
 
 def _write(s):
@@ -374,8 +392,6 @@ def redirect_std():
     return stdin, stdout
 
 if __name__ == "__main__":
-#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[FilterPlugin()])
-#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"})])
     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"}), FilterPlugin()])
     print menu.show()
 #~     print "Would you like to continue? ",
