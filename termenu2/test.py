@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 import unittest
 import ansi
-from termenu import Termenu, Plugin, FilterPlugin, call_previous
+from termenu import Termenu, Plugin, FilterPlugin
 
 OPTIONS = ["%02d" % i for i in xrange(1,100)]
 RESULTS = ["result-%02d" % i for i in xrange(1,100)]
@@ -256,7 +256,7 @@ class Decorate(unittest.TestCase):
 
     def test_max_opti_on_len(self):
         menu = Termenu("one three fifteen twenty eleven".split(), height=4)
-        assert menu._decorate("three", active=True, selected=True) == "*" + active_selected("three  ") + "  "
+        assert menu._decorate("three", active=True, selected=True) == "*" + active_selected("three") + "  "
 
 class DecorateFlags(unittest.TestCase):
     def test_active(self):
@@ -293,10 +293,10 @@ class Plugins(unittest.TestCase):
         def __init__(self, callPrev):
             self.ran = False
             self.callPrev = callPrev
-        def _on_key(self, stack, key):
+        def _on_key(self, key):
             self.ran = True
             if self.callPrev:
-                call_previous(stack, key)
+                self.parent._on_key(key)
 
     def test_multiple_plugins_all(self):
         plugins = [self.SamplePlugin(True), self.SamplePlugin(True), self.SamplePlugin(True)]

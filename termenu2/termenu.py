@@ -4,32 +4,35 @@ sys.path.append("..")
 import ansi
 
 def pluggable(method):
-    # FIXME: remove the need for "stack" parameter to all overrides
     """
-    Marks a method to be extendable via plugins.
-    When the method is called, the last installed plugin will be called and the 
-    call will propagate up the stack of plugins until the original method is called.
+    Mark a class method as extendable with plugins.
     """
     def wrapped(self, *args, **kwargs):
-        stack = [lambda *args, **kwargs: method(self, *args, **kwargs)]
-        for plugin in self.plugins:
-            if hasattr(plugin, method.__name__):
-                stack.append(getattr(plugin, method.__name__))
-        return call_previous(stack, *args, **kwargs)
+        if hasattr(self, "_plugins"):
+            # call the last plugin, it may call the previous via self.parent.method
+            # creating a call call chain
+            return getattr(self._plugins[-1], method.__name__)(*args, **kwargs)
+        else:
+            return method(self, *args, **kwargs)
+    wrapped.original = method
     return wrapped
 
-def call_previous(stack, *args, **kwargs):
+def register_plugin(host, plugin):
     """
-    Calls the previous plugin in the plugin chain.
+    Register a plugin with a host object. Some @pluggable methods in the host
+    will have their behaviour altered by the plugin.
     """
-    method = stack.pop()
-    if stack:
-        return method(stack, *args, **kwargs)
-    else:
-        return method(*args, **kwargs)
+    class OriginalMethods(object):
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: getattr(host, name).original(host, *args, **kwargs)
+    if not hasattr(host, "_plugins"):
+        host._plugins = [OriginalMethods()]
+    plugin.parent = host._plugins[-1]
+    plugin.host = host
+    host._plugins.append(plugin)
 
 class Termenu(object):
-    class Option(object):
+    class _Option(object):
         def __init__(self, text, result, **attrs):
             self.text = text
             self.result = result
@@ -41,17 +44,17 @@ class Termenu(object):
             return len(self.text)
 
     def __init__(self, options, results=None, default=None, height=None, multiselect=True, plugins=None):
-        self.options = [self.Option(o, r) for o, r in zip(options, results or options)]
+        self.options = [self._Option(o, r) for o, r in zip(options, results or options)]
         self.height = min(height or 10, len(options))
         self.multiselect = multiselect
         self.cursor = 0
         self.scroll = 0
-        self.plugins = plugins or []
-        for plugin in self.plugins:
-            plugin.attach(self)
         self._maxOptionLen = max(len(o) for o in self.options)
         self._aborted = False
         self._set_default(default)
+        for plugin in plugins or []:
+            register_plugin(self, plugin)
+            plugin.init()
 
     def get_result(self):
         if self._aborted:
@@ -228,15 +231,21 @@ class Termenu(object):
         return option
 
 class Plugin(object):
-    # attach to a Termenu object
-    def attach(self, menu):
-        self.menu = menu
+    def init(self):
+        pass
+
+    def __getattr__(self, name):
+        # allow calls to fall through to parent plugins if a method isn't defined
+        return getattr(self.parent, name)
 
 class FilterPlugin(Plugin):
     def __init__(self):
         self.text = None
 
-    def _on_key(self, stack, key):
+    def init(self):
+        self._allOptions = self.host.options[:]
+
+    def _on_key(self, key):
         prevent = False
         if len(key) == 1 and 32 < ord(key) <= 127:
             if not self.text:
@@ -253,12 +262,12 @@ class FilterPlugin(Plugin):
             self._refilter()
 
         if not prevent:
-            return call_previous(stack, key)
+            return self.parent._on_key(key)
 
-    def _print_menu(self, stack):
-        call_previous(stack)
+    def _print_menu(self):
+        self.parent._print_menu()
 
-        for i in xrange(0, self.menu.height - len(self.menu.options)):
+        for i in xrange(0, self.host.height - len(self.host.options)):
             ansi.clear_eol()
             _write("\n")
         if self.text is not None:
@@ -267,51 +276,46 @@ class FilterPlugin(Plugin):
         ansi.clear_eol()
 
     def _refilter(self):
-        self.menu.options = []
+        self.host.options = []
         text = "".join(self.text or []).lower()
         for option in self._allOptions:
             if text in str(option).lower() or option.attrs.get("showAlways"):
-                self.menu.options.append(option)
+                self.host.options.append(option)
         #FIXME: it would be better to keep the selection
-        self.menu.cursor = 0
-        self.menu.scroll = 0
-
-    def attach(self, menu):
-        Plugin.attach(self, menu)
-        self._allOptions = menu.options[:]
+        self.host.cursor = 0
+        self.host.scroll = 0
 
 class HeaderPlugin(Plugin):
     def __init__(self, headers):
         self.headers = headers
 
-    def attach(self, menu):
-        Plugin.attach(self, menu)
+    def init(self):
         options = []
-        for i, option in enumerate(self.menu.options):
+        for i, option in enumerate(self.host.options):
             if i in self.headers:
-                options.append(self.menu.Option(self.headers[i], result=None, header=True, showAlways=True))
+                options.append(self.host._Option(self.headers[i], result=None, header=True, showAlways=True))
             options.append(option)
-        self.menu.options = options
+        self.host.options = options
 
-    def _on_enter(self, stack):
+    def _on_enter(self):
         # can't select a header
-        if self.menu._get_active_option().attrs.get("header"):
+        if self.host._get_active_option().attrs.get("header") and self.host.get_result() == [None]:
             return False
         else:
-            return call_previous(stack)
+            return self.parent._on_enter()
 
-    def _on_space(self, stack):
-        if self.menu._get_active_option().attrs.get("header"):
-            self.menu._on_down()
+    def _on_space(self):
+        if self.host._get_active_option().attrs.get("header"):
+            self.host._on_down()
         else:
-            call_previous(stack)
+            self.parent._on_space()
 
-    def _decorate_flags(self, stack, index):
-        flags = call_previous(stack, index)
-        flags["header"] = self.menu.options[self.menu.scroll+index].attrs.get("header")
+    def _decorate_flags(self, index):
+        flags = self.parent._decorate_flags(index)
+        flags["header"] = self.host.options[self.host.scroll+index].attrs.get("header")
         return flags
 
-    def _decorate(self, stack, option, **flags):
+    def _decorate(self, option, **flags):
         active = flags.get("active", False)
         header = flags.get("header", False)
         if header:
@@ -321,7 +325,7 @@ class HeaderPlugin(Plugin):
                 option = " " + ansi.colorize(option, "white", bright=True)
             return option
         else:
-            return call_previous(stack, option, **flags)
+            return self.parent._decorate(option, **flags)
 
 class Minimenu(object):
     def __init__(self, options, default=None):
