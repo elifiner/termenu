@@ -27,7 +27,7 @@ Examples:
     parser.add_option("-h", "--height", type="int", help="Max height [10]", metavar="N", default=10)
     parser.add_option("-o", "--one", action="store_true", help="Don't show a menu if only one option was given [False]")
     parser.add_option("-p", "--precolored", action="store_true", help="Work better with ANSI colored options [False]")
-    parser.add_option("--no-multi", dest="multiselect", action="store_false", default=True, help="Allow multiple selection via <Space> key")
+    parser.add_option("--no-multi", dest="multiselect", action="store_false", default=True, help="Disallow multiple selection via <Space> key")
     (options, args) = parser.parse_args()
 
     if options.help:
