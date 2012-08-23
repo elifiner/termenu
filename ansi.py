@@ -50,6 +50,13 @@ def colorize(string, color, background=None, bright=False):
     background = 40 + COLORS.get(background, COLORS["default"])
     return "\x1b[0;%d;%d;%dm%s\x1b[0;m" % (int(bright), color, background, string)
 
+def highlight(string, background):
+    # adds background to a string, even if it's already colorized
+    background = 40 + COLORS.get(background, COLORS["default"])
+    bkcmd = "\x1b[%dm" % background
+    stopcmd = "\x1b[m"
+    return bkcmd + string.replace(stopcmd, bkcmd) + stopcmd 
+
 if __name__ == "__main__":
     # Print all colors
     colors = [name for name, color in sorted(COLORS.items(), key=lambda v: v[1])]
