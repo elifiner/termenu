@@ -1,0 +1,31 @@
+Abstract
+--------
+
+Termenu is a utility to display inline inteeractive menus in commmand line scripts.
+
+Name
+----
+
+Termenu is a combination of the words terminal and menu.
+
+Description
+-----------
+
+Traditionally there are two types of applications running the Unix shell: pure
+command line utilities such as grep, sed and awk and full screen interactive
+applications such as Midnight Commander. Termenu aims to bridge this gap and
+allow a modicum of interactivity in regular command line utilities. A common
+example is finding and editing a file located somewhere in the directory tree.
+The usual way to do this is to run:
+
+$ find . -name the_file_i_need.txt
+
+
+Examples
+--------
+
+Choose a recent commit (for i.e. cherry-pick):
+
+$ git log --pretty=format:'%h -%d %s (%cr)' | ./termenu -w80 -r10 -m | sed "s/ - .*//"
+
+

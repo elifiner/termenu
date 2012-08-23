@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import re
 import sys
 import termenu
 
@@ -12,7 +13,6 @@ def main():
     description = """\
 Shows an inline interactive menu. Menu items can be supplied as arguments,
 via STDIN (if no arguments were given) or a file (using -f).
-Menus can be vertical (multi-line) or one-line.
 
 Examples:
     termenu Abort Retry Fail
@@ -22,13 +22,11 @@ Examples:
     parser = OptionParser(usage="Usage: %prog [items]", description=description, formatter=MyHelpFormatter(), add_help_option=False)
     parser.add_option("--help", help="Show help message", action="store_true", default=False)
     parser.add_option("-f", "--file", help="Take menu items from a file", metavar="FILE")
-    parser.add_option("-t", "--title", help="A title for the menu", default="")
+#~     parser.add_option("-t", "--title", help="A title for the menu", default="")
     parser.add_option("-d", "--default", help="Default item to select", metavar="OPTION")
-    parser.add_option("-r", "--rows", type="int", help="Max rows", metavar="N", default=0)
-    parser.add_option("-c", "--columns", type="int", help="Max columns", metavar="N", default=1)
-    parser.add_option("-w", "--column-width", dest="maxColumnWidth", type="int", help="Max column width", metavar="N", default=0)
+    parser.add_option("-r", "--rows", type="int", help="Max rows [10]", metavar="N", default=10)
     parser.add_option("-o", "--one", action="store_true", help="Don't show a menu if only one option was given [False]")
-    parser.add_option("-m", "--multi-select", dest="multiSelect", action="store_true", help="Allow multiple selection via <Space> key")
+    parser.add_option("--no-multi", dest="multiselect", action="store_false", default=True, help="Allow multiple selection via <Space> key")
     (options, args) = parser.parse_args()
 
     if options.help:
@@ -38,31 +36,31 @@ Examples:
     items = []
 
     try:
-        if len(args) == 0:
-            items = [l.strip() for l in redirectedStdin.readlines()]
-        elif options.file:
+        if options.file:
             items = open(options.file).readlines()
-        else:
+        elif len(args) > 0:
             items = args
+        else:
+            items = redirectedStdin.readlines()
     except IOError, e:
         parser.error(str(e))
 
     if not items:
         parser.error("no menu items provided")
 
-    if options.one and len(items) == 1:
-        result = items[0]
-    else:
-        result = termenu.show_menu(options.title, items,
-            default=options.default, rows=options.rows or None,
-            columns=options.columns or None, maxColumnWidth=options.maxColumnWidth or None,
-            multiSelect=options.multiSelect)
+    items = [re.sub("\s+", " ", item.strip()) for item in items]
 
-    if result:
-        if options.multiSelect:
-            redirectedStdout.write("\n".join(result) + "\n")
-        else:
-            redirectedStdout.write(result + "\n")
+    if options.one and len(items) == 1:
+        results = [items[0]]
+    else:
+        results = termenu.Termenu(items, 
+            default=options.default, 
+            height=options.rows, 
+            multiselect=options.multiselect, 
+            plugins=[termenu.FilterPlugin()]).show()
+
+    if results:
+        redirectedStdout.write("\n".join(results) + "\n")
 
 if __name__ == "__main__":
     main()

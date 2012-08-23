@@ -3,7 +3,7 @@ Future Features
 
 V (builtin) default selection
 V (builtin) return objects instead of menu names
-V (builtin) filtering by typing
+V (plugin) filtering by typing
 V (plugin) inner headlines (for gitter) with filtering
 V micro menu (for yes/no choices)
 * (plugin) precolored menu items
