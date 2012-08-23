@@ -6,11 +6,12 @@ V (builtin) return objects instead of menu names
 V (plugin) filtering by typing
 V (plugin) inner headlines (for gitter) with filtering
 V micro menu (for yes/no choices)
-* (plugin) precolored menu items
+V (plugin) ANSI colored menu items
 * (builtin) backward compatible show_menu
 * (builtin) limit size (to terminal width / height)
 * (plugin) readline-style editing on the filtering line
 * (derived) multi column display (for file menu and gitter)
+* (plugin) shorten long ANSI-colored lines to specific width
 
 Tasks
 =====

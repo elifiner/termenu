@@ -189,9 +189,7 @@ class Termenu(object):
         _write("\r")
         for index, option in enumerate(self._get_window()):
             # all height to same width
-            option = "{0:<{width}}".format(option, width=self._maxOptionLen)
-
-            _write(self._decorate(option, **self._decorate_flags(index)) + "\n")
+            _write(self._decorate(str(option), **self._decorate_flags(index)) + "\n")
             ansi.clear_eol()
 
     @pluggable
@@ -209,6 +207,8 @@ class Termenu(object):
         selected = flags.get("selected", False)
         moreAbove = flags.get("moreAbove", False)
         moreBelow = flags.get("moreBelow", False)
+
+        option = "{0:<{width}}".format(option, width=self._maxOptionLen)
 
         # add selection / cursor decorations
         if active and selected:
@@ -328,11 +328,16 @@ class HeaderPlugin(Plugin):
             return self.parent._decorate(option, **flags)
 
 class Precolored(Plugin):
+    def init(self):
+        self._maxOptionLen = max(len(ansi.decolorize(str(o))) for o in self.host.options)
+
     def _decorate(self, option, **flags):
         active = flags.get("active", False)
         selected = flags.get("selected", False)
         moreAbove = flags.get("moreAbove", False)
         moreBelow = flags.get("moreBelow", False)
+
+        option = option + (" " * (self._maxOptionLen - len(ansi.decolorize(option))))
 
         # add selection / cursor decorations
         option = ("=> " if selected else "   ") + option
@@ -418,7 +423,7 @@ def redirect_std():
     return stdin, stdout
 
 if __name__ == "__main__":
-    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"}), FilterPlugin()])
+    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"}), FilterPlugin()])
 #~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[Precolored()])
     print menu.show()
 #~     print "Would you like to continue? ",
