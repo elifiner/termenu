@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 import unittest
 import ansi
-from termenu import Termenu, Plugin, FilterPlugin
+from termenu import Termenu, Plugin, FilterPlugin, call_previous
 
 OPTIONS = ["%02d" % i for i in xrange(1,100)]
 RESULTS = ["result-%02d" % i for i in xrange(1,100)]
@@ -290,28 +290,29 @@ class DecorateFlags(unittest.TestCase):
 
 class Plugins(unittest.TestCase):
     class SamplePlugin(Plugin):
-        def __init__(self, prevent):
+        def __init__(self, callPrev):
             self.ran = False
-            self.prevent = prevent
-        def _on_key(self, key):
+            self.callPrev = callPrev
+        def _on_key(self, stack, key):
             self.ran = True
-            yield self.prevent
+            if self.callPrev:
+                call_previous(stack, key)
 
     def test_multiple_plugins_all(self):
-        plugins = [self.SamplePlugin(None), self.SamplePlugin(False), self.SamplePlugin(None)]
+        plugins = [self.SamplePlugin(True), self.SamplePlugin(True), self.SamplePlugin(True)]
         menu = Termenu(OPTIONS, height=4, plugins=plugins)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_key("down")
         assert strmenu(menu) == "01 (02) 03 04"
         assert [p.ran for p in plugins] == [True, True, True]
 
-    def test_multiple_plugins_first_only(self):
-        plugins = [self.SamplePlugin(True), self.SamplePlugin(None), self.SamplePlugin(None)]
+    def test_multiple_plugins_no_call_prev(self):
+        plugins = [self.SamplePlugin(False), self.SamplePlugin(False), self.SamplePlugin(False)]
         menu = Termenu(OPTIONS, height=4, plugins=plugins)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_key("down")
         assert strmenu(menu) == "(01) 02 03 04"
-        assert [p.ran for p in plugins] == [True, False, False]
+        assert [p.ran for p in plugins] == [False, False, True]
 
 class FilterPluginTest(unittest.TestCase):
     def test_filter(self):

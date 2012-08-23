@@ -4,28 +4,28 @@ sys.path.append("..")
 import ansi
 
 def pluggable(method):
-    def _wrapped(self, *args, **kw):
-        post = []
-        prevent = False
-        # run plugin pre-processing
+    """
+    Marks a method to be extendable via plugins.
+    When the method is called, the last installed plugin will be called and the 
+    call will propagate up the stack of plugins until the original method is called.
+    """
+    def wrapped(self, *args, **kwargs):
+        stack = [lambda *args, **kwargs: method(self, *args, **kwargs)]
         for plugin in self.plugins:
-            gen = getattr(plugin, method.__name__)(*args, **kw)
-            prevent = gen.next()
-            if prevent:
-                break
-            post.append(gen)
-        # run default implementation
-        result = None
-        if not prevent:
-            result = method(self, *args, **kw)
-        # run plugin post-processing in reverse order
-        for gen in reversed(post):
-            try:
-                gen.next()
-            except StopIteration:
-                pass
-        return result
-    return _wrapped
+            if hasattr(plugin, method.__name__):
+                stack.append(getattr(plugin, method.__name__))
+        return call_previous(stack, *args, **kwargs)
+    return wrapped
+
+def call_previous(stack, *args, **kwargs):
+    """
+    Calls the previous plugin in the plugin chain.
+    """
+    method = stack.pop()
+    if stack:
+        return method(stack, *args, **kwargs)
+    else:
+        return method(*args, **kwargs)
 
 class Termenu(object):
     class Option(object):
@@ -44,13 +44,13 @@ class Termenu(object):
         self.height = min(height or 10, len(options))
         self.multiselect = multiselect
         self.plugins = plugins or []
+        for plugin in self.plugins:
+            plugin.attach(self)
         self.cursor = 0
         self.scroll = 0
         self._maxOptionLen = max(len(o) for o in self.options)
         self._aborted = False
         self._set_default(default)
-        for plugin in self.plugins:
-            plugin.attach(self)
 
     def get_result(self):
         if self._aborted:
@@ -222,19 +222,17 @@ class Plugin(object):
     def attach(self, menu):
         self.menu = menu
 
-    def _on_key(self, key):
-        # put preprocessing here
-        yield # yield True will prevent other plugins from processing this function
-        # put postprocessing here
+    def _on_key(self, stack, key):
+        pass
 
-    def _print_menu(self):
-        yield
+    def _print_menu(self, stack):
+        pass
 
 class FilterPlugin(Plugin):
     def __init__(self):
         self.text = None
 
-    def _on_key(self, key):
+    def _on_key(self, stack, key):
         prevent = False
         if len(key) == 1 and 32 < ord(key) <= 127:
             if not self.text:
@@ -250,10 +248,11 @@ class FilterPlugin(Plugin):
             prevent = True
             self._refilter()
 
-        yield prevent
+        if not prevent:
+            call_previous(stack, key)
 
-    def _print_menu(self):
-        yield
+    def _print_menu(self, stack):
+        call_previous(stack)
 
         for i in xrange(0, self.menu.height - len(self.menu.options)):
             ansi.clear_eol()
