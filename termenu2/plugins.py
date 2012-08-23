@@ -1,58 +1,42 @@
 def pluggable(method):
-    """
-    Marks a method to be extendable via plugins.
-    When the method is called, the last installed plugin will be called and the 
-    call will propagate up the stack of plugins until the original method is called.
-    """
     def wrapped(self, *args, **kwargs):
-        stack = [lambda *args, **kwargs: method(self, *args, **kwargs)]
-        for plugin in self._plugins:
-            if hasattr(plugin, method.__name__):
-                stack.append(getattr(plugin, method.__name__))
-        return call_previous(stack, *args, **kwargs)
+        return getattr(self._plugins[-1], method.__name__)(*args, **kwargs)
+    wrapped.original = method
     return wrapped
 
-def call_previous(stack, *args, **kwargs):
-    """
-    Calls the previous plugin in the plugin chain.
-    """
-    method = stack.pop()
-    if stack:
-        return method(stack, *args, **kwargs)
-    else:
-        return method(*args, **kwargs)
-
-class Plugin(object):
-    pass
-
-class Server(object):
+class Host(object):
     def register_plugin(self, plugin):
         if not hasattr(self, "_plugins"):
-            self._plugins = []
+            server = self
+            class OriginalMethods(object):
+                def __getattr__(self, name):
+                    return lambda *args, **kwargs: getattr(server, name).original(server, *args, **kwargs)
+            self._plugins = [OriginalMethods()]
+        plugin.base = self._plugins[-1]
         self._plugins.append(plugin)
 
 # ----------------------------------------------------------------------
 
-class SampleServer(Server):
-    @pluggable
-    def foo(self, param):
-        print "original %s" % param
-        return 7
-
-class SamplePlugin(Plugin):
-    def __init__(self, name):
-        self.name = name
-
-    def foo(self, stack, param):
-        print "%s enter %s" % (self.name, param)
-        result = call_previous(stack, param)
-        print "%s enter %s" % (self.name, param)
-        return result
-
 if __name__ == "__main__":
+    class SampleHost(Host):
+        @pluggable
+        def foo(self, param):
+            print "original %s" % param
+            return 7
+
+    class SamplePlugin(object):
+        def __init__(self, name):
+            self.name = name
+
+        def foo(self, param):
+            print "%s enter %s" % (self.name, param)
+            result = self.base.foo(param)
+            print "%s enter %s" % (self.name, param)
+            return result
+
     plugin1 = SamplePlugin("sample1")
     plugin2 = SamplePlugin("sample2")
-    server = SampleServer()
+    server = SampleHost()
     server.register_plugin(plugin1)
     server.register_plugin(plugin2)
     print server.foo("momo")
