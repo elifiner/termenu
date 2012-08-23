@@ -12,6 +12,7 @@ V (plugin) ANSI colored menu items
 * (plugin) readline-style editing on the filtering line
 * (derived) multi column display (for file menu and gitter)
 * (plugin) shorten long ANSI-colored lines to specific width
+* (builtin) support options iterator (for long or endless menus)
 
 Tasks
 =====
