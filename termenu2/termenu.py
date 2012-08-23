@@ -43,11 +43,11 @@ class Termenu(object):
         self.options = [self.Option(o, r) for o, r in zip(options, results or options)]
         self.height = min(height or 10, len(options))
         self.multiselect = multiselect
+        self.cursor = 0
+        self.scroll = 0
         self.plugins = plugins or []
         for plugin in self.plugins:
             plugin.attach(self)
-        self.cursor = 0
-        self.scroll = 0
         self._maxOptionLen = max(len(o) for o in self.options)
         self._aborted = False
         self._set_default(default)
@@ -168,6 +168,7 @@ class Termenu(object):
         self._aborted = True
         return True # stop loop
 
+    @pluggable
     def _on_enter(self):
         return True # stop loop
 
@@ -222,11 +223,12 @@ class Plugin(object):
     def attach(self, menu):
         self.menu = menu
 
-    def _on_key(self, stack, key):
-        pass
+#~     def _on_key(self, stack, key):
+#~         return call_previous(stack, key)
+#~ 
+#~     def _print_menu(self, stack):
+#~         return call_previous(stack)
 
-    def _print_menu(self, stack):
-        pass
 
 class FilterPlugin(Plugin):
     def __init__(self):
@@ -249,7 +251,7 @@ class FilterPlugin(Plugin):
             self._refilter()
 
         if not prevent:
-            call_previous(stack, key)
+            return call_previous(stack, key)
 
     def _print_menu(self, stack):
         call_previous(stack)
@@ -266,7 +268,7 @@ class FilterPlugin(Plugin):
         self.menu.options = []
         text = "".join(self.text or []).lower()
         for option in self._allOptions:
-            if text in str(option).lower():
+            if text in str(option).lower() or option.attrs.get("showAlways"):
                 self.menu.options.append(option)
         #FIXME: it would be better to keep the selection
         self.menu.cursor = 0
@@ -277,34 +279,24 @@ class FilterPlugin(Plugin):
         self._allOptions = menu.options[:]
 
 class HeaderPlugin(Plugin):
-    #FIXME: doesn't work with filtering (headers dissapear)
-    #FIXME: if I can't make HeaderPlugin work, perhaps the whole plugin idea is misguided
     def __init__(self, headers):
         self.headers = headers
 
     def attach(self, menu):
         Plugin.attach(self, menu)
-        for option in self.menu.options:
-            option
         options = []
         for i, option in enumerate(self.menu.options):
             if i in self.headers:
-                options.append(self.menu.Option(self.headers[i], result=None, header=True))
+                options.append(self.menu.Option(self.headers[i], result=None, header=True, showAlways=True))
             options.append(option)
         self.menu.options = options
-        if self.menu._get_active_option().attrs.get("header", False):
-            self.menu._on_down()
 
-    def _on_key(self, key):
-        prev = self.menu.cursor
-        yield
-        if self.menu._get_active_option().attrs.get("header", False):
-            if self.menu.scroll + self.menu.cursor == 0:
-                self.menu._on_down()
-            elif self.menu.cursor > prev:
-                self.menu._on_down()
-            elif self.menu.cursor < prev:
-                self.menu._on_up()
+    def _on_enter(self, stack):
+        # can't select a header
+        if self.menu._get_active_option().attrs.get("header"):
+            return False
+        else:
+            return call_previous(stack)
 
 class Minimenu(object):
     def __init__(self, options, default=None):
@@ -376,7 +368,8 @@ def redirect_std():
 
 if __name__ == "__main__":
 #~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[FilterPlugin()])
-    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"})])
+#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"})])
+    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"}), FilterPlugin()])
     print menu.show()
 #~     print "Would you like to continue? ",
 #~     result = Minimenu(["Abort", "Retry", "Fail"], "Fail").show()
