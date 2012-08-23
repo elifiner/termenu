@@ -55,7 +55,11 @@ def highlight(string, background):
     background = 40 + COLORS.get(background, COLORS["default"])
     bkcmd = "\x1b[%dm" % background
     stopcmd = "\x1b[m"
-    return bkcmd + string.replace(stopcmd, bkcmd) + stopcmd 
+    return bkcmd + string.replace(stopcmd, stopcmd + bkcmd) + stopcmd
+
+def decolorize(string):
+    import re
+    return re.sub("\x1b\[(\d+)?(;\d+)*m", "", string)
 
 if __name__ == "__main__":
     # Print all colors
