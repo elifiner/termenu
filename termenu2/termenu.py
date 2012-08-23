@@ -186,6 +186,7 @@ class Termenu(object):
             _write(self._decorate(option, **self._decorate_flags(i)) + "\n")
             ansi.clear_eol()
 
+    @pluggable
     def _decorate_flags(self, i):
         return dict(
             active = (self.cursor == i),
@@ -194,7 +195,13 @@ class Termenu(object):
             moreBelow = (self.scroll + self.height < len(self.options) and i == self.height - 1),
         )
 
-    def _decorate(self, option, active=False, selected=False, moreAbove=False, moreBelow=False):
+    @pluggable
+    def _decorate(self, option, **flags):
+        active = flags.get("active", False)
+        selected = flags.get("selected", False)
+        moreAbove = flags.get("moreAbove", False)
+        moreBelow = flags.get("moreBelow", False)
+
         # all height to same width
         option = "{0:<{width}}".format(option, width=self._maxOptionLen)
 
