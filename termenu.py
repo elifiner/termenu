@@ -327,6 +327,28 @@ class HeaderPlugin(Plugin):
         else:
             return self.parent._decorate(option, **flags)
 
+class Precolored(Plugin):
+    def _decorate(self, option, **flags):
+        active = flags.get("active", False)
+        selected = flags.get("selected", False)
+        moreAbove = flags.get("moreAbove", False)
+        moreBelow = flags.get("moreBelow", False)
+
+        # add selection / cursor decorations
+        option = ("=> " if selected else "   ") + option
+        if active:
+            option = ansi.highlight(option, "black")
+
+        # add more above/below indicators
+        if moreAbove:
+            option = option + " " + ansi.colorize("^", "white", bright=True)
+        elif moreBelow:
+            option = option + " " + ansi.colorize("v", "white", bright=True)
+        else:
+            option = option + "  "
+
+        return option
+
 class Minimenu(object):
     def __init__(self, options, default=None):
         self.options = options
@@ -397,6 +419,7 @@ def redirect_std():
 
 if __name__ == "__main__":
     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"}), FilterPlugin()])
+#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[Precolored()])
     print menu.show()
 #~     print "Would you like to continue? ",
 #~     result = Minimenu(["Abort", "Retry", "Fail"], "Fail").show()
