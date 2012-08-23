@@ -296,6 +296,8 @@ class HeaderPlugin(Plugin):
                 options.append(self.host._Option(self.headers[i], result=None, header=True, showAlways=True))
             options.append(option)
         self.host.options = options
+        if self.host._get_active_option().attrs.get("header"):
+            self.host._on_down()
 
     def _on_enter(self):
         # can't select a header
@@ -319,10 +321,11 @@ class HeaderPlugin(Plugin):
         active = flags.get("active", False)
         header = flags.get("header", False)
         if header:
+            option = "{0:<{width}}".format(option, width=self.host._maxOptionLen)
             if active:
-                option = " " + ansi.colorize(option, "white", "black", bright=True)
+                option = " " + ansi.colorize(option, "blue", "white", bright=True)
             else:
-                option = " " + ansi.colorize(option, "white", bright=True)
+                option = " " + ansi.colorize(option, "blue", bright=True)
             return option
         else:
             return self.parent._decorate(option, **flags)
