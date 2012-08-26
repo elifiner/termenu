@@ -196,9 +196,13 @@ class Termenu(object):
     def _print_menu(self):
         _write("\r")
         for index, option in enumerate(self._get_window()):
-            # all height to same width
+            option = self._adjust_width(option)
             _write(self._decorate(str(option), **self._decorate_flags(index)) + "\n")
             ansi.clear_eol()
+
+    @pluggable
+    def _adjust_width(self, option):
+        return "{0:<{width}}".format(option, width=self._maxOptionLen)
 
     @pluggable
     def _decorate_flags(self, index):
@@ -213,10 +217,6 @@ class Termenu(object):
     def _decorate(self, option, **flags):
         active = flags.get("active", False)
         selected = flags.get("selected", False)
-        moreAbove = flags.get("moreAbove", False)
-        moreBelow = flags.get("moreBelow", False)
-
-        option = "{0:<{width}}".format(option, width=self._maxOptionLen)
 
         # add selection / cursor decorations
         if active and selected:
@@ -227,6 +227,13 @@ class Termenu(object):
             option = "*" + ansi.colorize(option, "red")
         else:
             option = " " + option
+
+        return self._decorate_indicators(option, **flags)
+
+    @pluggable
+    def _decorate_indicators(self, option, **flags):
+        moreAbove = flags.get("moreAbove", False)
+        moreBelow = flags.get("moreBelow", False)
 
         # add more above/below indicators
         if moreAbove:
@@ -345,13 +352,14 @@ class Precolored(Plugin):
             if option.text == option.result:
                 option.result = ansi.decolorize(option.result)
 
+    def _adjust_width(self, option):
+        return option + (" " * (self._maxOptionLen - len(ansi.decolorize(option))))
+
     def _decorate(self, option, **flags):
         active = flags.get("active", False)
         selected = flags.get("selected", False)
         moreAbove = flags.get("moreAbove", False)
         moreBelow = flags.get("moreBelow", False)
-
-        option = option + (" " * (self._maxOptionLen - len(ansi.decolorize(option))))
 
         # add selection / cursor decorations
         option = ("=> " if selected else "   ") + option
