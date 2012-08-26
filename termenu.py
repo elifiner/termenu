@@ -161,6 +161,14 @@ class Termenu(object):
         else:
             self.scroll = 0
 
+    def _on_home(self):
+        self.cursor = 0
+        self.scroll = 0
+
+    def _on_end(self):
+        self.scroll = len(self.options) - self.height
+        self.cursor = self.height - 1
+
     @pluggable
     def _on_space(self):
         if not self.multiselect:
