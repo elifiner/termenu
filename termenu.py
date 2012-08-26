@@ -333,6 +333,9 @@ class HeaderPlugin(Plugin):
 class Precolored(Plugin):
     def init(self):
         self._maxOptionLen = max(len(ansi.decolorize(str(o))) for o in self.host.options)
+        for option in self.host.options:
+            if option.text == option.result:
+                option.result = ansi.decolorize(option.result)
 
     def _decorate(self, option, **flags):
         active = flags.get("active", False)
