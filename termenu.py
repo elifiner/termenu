@@ -196,6 +196,7 @@ class Termenu(object):
     def _print_menu(self):
         _write("\r")
         for index, option in enumerate(self._get_window()):
+            option = str(option)
             option = self._adjust_width(option)
             _write(self._decorate(str(option), **self._decorate_flags(index)) + "\n")
             ansi.clear_eol()
@@ -347,10 +348,9 @@ class HeaderPlugin(Plugin):
 
 class Precolored(Plugin):
     def init(self):
-        self._maxOptionLen = max(len(ansi.decolorize(str(o))) for o in self.host.options)
         for option in self.host.options:
-            if option.text == option.result:
-                option.result = ansi.decolorize(option.result)
+            option.result = ansi.decolorize(option.text)
+        self._maxOptionLen = max(len(option.result) for option in self.host.options)
 
     def _adjust_width(self, option):
         return option + (" " * (self._maxOptionLen - len(ansi.decolorize(option))))
