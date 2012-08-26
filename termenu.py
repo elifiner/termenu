@@ -301,17 +301,15 @@ class FilterPlugin(Plugin):
         self.host.cursor = 0
         self.host.scroll = 0
 
-class HeaderPlugin(Plugin):
-    def __init__(self, headers):
-        self.headers = headers
+class Header(str):
+    pass
 
+class HeaderPlugin(Plugin):
     def init(self):
-        options = []
-        for i, option in enumerate(self.host.options):
-            if i in self.headers:
-                options.append(self.host._Option(self.headers[i], result=None, header=True, showAlways=True))
-            options.append(option)
-        self.host.options = options
+        for option in self.host.options:
+            if isinstance(option.text, Header):
+                option.attrs["header"] = True
+                option.result = None
         if self.host._get_active_option().attrs.get("header"):
             self.host._on_down()
 
@@ -445,7 +443,11 @@ def redirect_std():
     return stdin, stdout
 
 if __name__ == "__main__":
-    menu = Termenu(["option-%06d" % i for i in xrange(1,100)], plugins=[HeaderPlugin({0:"One",2:"Three",16:"Seventeen"}), FilterPlugin()])
+    options = ["option-%06d" % i for i in xrange(1,100)]
+    options.insert(0, Header("One"))
+    options.insert(3, Header("Three"))
+    options.insert(17, Header("Seventeen"))
+    menu = Termenu(options, plugins=[HeaderPlugin(), FilterPlugin()])
 #~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[Precolored()])
     print menu.show()
 #~     print "Would you like to continue? ",
