@@ -11,13 +11,12 @@ def main():
             return description
 
     description = """\
-Shows an inline interactive menu. Menu items can be supplied as arguments,
-via STDIN (if no arguments were given) or a file (using -f).
+Shows an interactive menu in the terminal window.
 
 Examples:
-    termenu Abort Retry Fail
     ls | termenu
-    termenu.py -f file_with_options.txt
+    termenu -i Abort Retry Fail
+    termenu -f file_with_options.txt
 """
     parser = OptionParser(usage="Usage: %prog [items]", description=description, formatter=MyHelpFormatter(), add_help_option=False)
     parser.add_option("--help", help="Show help message", action="store_true", default=False)
@@ -25,9 +24,10 @@ Examples:
 #~     parser.add_option("-t", "--title", help="A title for the menu", default="")
     parser.add_option("-d", "--default", help="Default item to select", metavar="OPTION")
     parser.add_option("-h", "--height", type="int", help="Max height [10]", metavar="N", default=10)
-    parser.add_option("-o", "--one", action="store_true", help="Don't show a menu if only one option was given [False]")
-    parser.add_option("-p", "--precolored", action="store_true", help="Work better with ANSI colored options [False]")
-    parser.add_option("--no-multi", dest="multiselect", action="store_false", default=True, help="Disallow multiple selection via <Space> key")
+    parser.add_option("-o", "--one", action="store_true", help="Don't show a menu if only one option was given")
+    parser.add_option("-p", "--precolored", action="store_true", help="Preserve ANSI coloring in supplied options")
+    parser.add_option("-i", "--inline", action="store_true", help="Show small inline menu on a sinel line")
+    parser.add_option("--single", dest="multiselect", action="store_false", default=True, help="Single selection only")
     (options, args) = parser.parse_args()
 
     if options.help:
@@ -58,11 +58,14 @@ Examples:
     if options.one and len(items) == 1:
         results = [items[0]]
     else:
-        results = termenu.Termenu(items,
-            default=options.default,
-            height=options.height,
-            multiselect=options.multiselect,
-            plugins=plugins).show()
+        if options.inline:
+            results = [termenu.Minimenu(items, default=options.default).show()]
+        else:
+            results = termenu.Termenu(items,
+                default=options.default,
+                height=options.height,
+                multiselect=options.multiselect,
+                plugins=plugins).show()
 
     if results:
         redirectedStdout.write("\n".join(results) + "\n")
