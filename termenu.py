@@ -44,17 +44,16 @@ class Termenu(object):
             return len(self.text)
 
     def __init__(self, options, results=None, default=None, height=None, multiselect=True, plugins=None):
-        self.options = [self._Option(o, r) for o, r in zip(options, results or options)]
-        self.height = min(height or 10, len(options))
+        for plugin in plugins or []:
+            register_plugin(self, plugin)
+        self.options = self._make_option_objects(options, results)
+        self.height = min(height or 10, len(self.options))
         self.multiselect = multiselect
         self.cursor = 0
         self.scroll = 0
         self._maxOptionLen = max(len(o) for o in self.options)
         self._aborted = False
         self._set_default(default)
-        for plugin in plugins or []:
-            register_plugin(self, plugin)
-            plugin.init()
 
     def get_result(self):
         if self._aborted:
@@ -81,6 +80,10 @@ class Termenu(object):
         finally:
             self._clear_menu()
             ansi.show_cursor()
+
+    @pluggable
+    def _make_option_objects(self, options, results):
+        return [self._Option(o, r) for o, r in zip(options, results or options)]
 
     def _set_default(self, default):
         # handle default selection of multiple options
@@ -247,9 +250,6 @@ class Termenu(object):
         return option
 
 class Plugin(object):
-    def init(self):
-        pass
-
     def __getattr__(self, name):
         # allow calls to fall through to parent plugins if a method isn't defined
         return getattr(self.parent, name)
@@ -258,8 +258,10 @@ class FilterPlugin(Plugin):
     def __init__(self):
         self.text = None
 
-    def init(self):
-        self._allOptions = self.host.options[:]
+    def _make_option_objects(self, options, results):
+        objects = self.parent._make_option_objects(options, results)
+        self._allOptions = objects[:]
+        return objects
 
     def _on_key(self, key):
         prevent = False
@@ -305,13 +307,13 @@ class Header(str):
     pass
 
 class HeaderPlugin(Plugin):
-    def init(self):
-        for option in self.host.options:
+    def _make_option_objects(self, options, results):
+        options = self.parent._make_option_objects(options, results)
+        for option in options:
             if isinstance(option.text, Header):
                 option.attrs["header"] = True
                 option.result = None
-        if self.host._get_active_option().attrs.get("header"):
-            self.host._on_down()
+        return options
 
     def _on_enter(self):
         # can't select a header
@@ -345,10 +347,12 @@ class HeaderPlugin(Plugin):
             return self.parent._decorate(option, **flags)
 
 class Precolored(Plugin):
-    def init(self):
-        for option in self.host.options:
+    def _make_option_objects(self, options, results):
+        options = self.parent._make_option_objects(options, results)
+        for option in options:
             option.result = ansi.decolorize(option.text)
-        self._maxOptionLen = max(len(option.result) for option in self.host.options)
+        self._maxOptionLen = max(len(option.result) for option in options)
+        return options
 
     def _adjust_width(self, option):
         return option + (" " * (self._maxOptionLen - len(ansi.decolorize(option))))
