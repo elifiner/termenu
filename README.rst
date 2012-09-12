@@ -4,6 +4,8 @@ Abstract
 Termenu is a command line utility and Python library for displaying console
 based interactive menus.
 
+.. image:: images/termenu-screenshot.png
+
 Description
 -----------
 
@@ -62,10 +64,13 @@ Show the contents of a recent commit in ``git``::
 
   $ git show `git log --oneline --color | termenu -p | awk '{print $1}'`
 
+.. image:: images/git-menu-screenshot.png
+
 Ask a multiple choice question::
 
   $ echo -n "Would you like to exit? " && ./termenu -i Yes No Maybe
 
+.. image:: images/minimenu-screenshot.png
 
 See Also
 --------
