@@ -1,12 +1,10 @@
-import os
 import sys
 
 COLORS = dict(black=0, red=1, green=2, yellow=3, blue=4, magenta=5, cyan=6, white=7, default=9)
 
-_stdout = os.fdopen(sys.stdout.fileno(), "w", 0)
 def write(s):
-    # unbuffered write
-    _stdout.write(s)
+    sys.stdout.write(s)
+    sys.stdout.flush()
 
 def up(n=1):
     write("\x1b[%dA" % n)
