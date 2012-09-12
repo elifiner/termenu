@@ -29,6 +29,11 @@ def register_plugin(host, plugin):
     plugin.host = host
     host._plugins.append(plugin)
 
+class Plugin(object):
+    def __getattr__(self, name):
+        # allow calls to fall through to parent plugins if a method isn't defined
+        return getattr(self.parent, name)
+
 class Termenu(object):
     class _Option(object):
         def __init__(self, text, result, **attrs):
@@ -72,12 +77,16 @@ class Termenu(object):
                 stop = self._on_key(key)
                 if stop:
                     return self.get_result()
-                ansi.restore_position()
-                ansi.up(self.height)
+                self._goto_top()
                 self._print_menu()
         finally:
             self._clear_menu()
             ansi.show_cursor()
+
+    @pluggable
+    def _goto_top(self):
+        ansi.restore_position()
+        ansi.up(self.height)
 
     @pluggable
     def _make_option_objects(self, options, results):
@@ -187,6 +196,7 @@ class Termenu(object):
     def _on_enter(self):
         return True # stop loop
 
+    @pluggable
     def _clear_menu(self):
         ansi.restore_position()
         for i in xrange(self.height):
@@ -247,11 +257,6 @@ class Termenu(object):
             option = option + "  "
 
         return option
-
-class Plugin(object):
-    def __getattr__(self, name):
-        # allow calls to fall through to parent plugins if a method isn't defined
-        return getattr(self.parent, name)
 
 class FilterPlugin(Plugin):
     def __init__(self):
@@ -392,6 +397,23 @@ class Precolored(Plugin):
 
         return option
 
+class TitlePlugin(Plugin):
+    def __init__(self, title):
+        self.title = title
+        
+    def _goto_top(self):
+        self.parent._goto_top()
+        ansi.up(1)
+
+    def _print_menu(self):
+        ansi.write(ansi.colorize(self.title + "\n", "white", bright=True))
+        return self.parent._print_menu()
+
+    def _clear_menu(self):
+        self.parent._clear_menu()
+        ansi.up()
+        ansi.clear_eol()
+
 class Minimenu(object):
     def __init__(self, options, default=None):
         self.options = options
@@ -461,7 +483,7 @@ if __name__ == "__main__":
     options.insert(0, Header("One"))
     options.insert(3, Header("Three"))
     options.insert(17, Header("Seventeen"))
-    menu = Termenu(options, plugins=[HeaderPlugin(), FilterPlugin()])
+    menu = Termenu(options, plugins=[HeaderPlugin(), FilterPlugin(), TitlePlugin("List Of Numbers")])
 #~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[Precolored()])
     print menu.show()
 #~     print "Would you like to continue? ",
