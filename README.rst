@@ -62,7 +62,6 @@ Show the contents of a recent commit in ``git``::
 
   $ git show `git log --oneline --color | termenu -p | awk '{print $1}'`
 
-=======
 Ask a multiple choice question::
 
   $ echo -n "Would you like to exit? " && ./termenu -i Yes No Maybe
