@@ -296,12 +296,16 @@ class FilterPlugin(Plugin):
     def _refilter(self):
         self.host.options = []
         text = "".join(self.text or []).lower()
+        # filter the matching options
         for option in self._allOptions:
             if text in str(option).lower() or option.attrs.get("showAlways"):
                 self.host.options.append(option)
-        #FIXME: it would be better to keep the selection
-        self.host.cursor = 0
+        # select the first matching element (showAlways elements might not match)
         self.host.scroll = 0
+        for i, option in enumerate(self.host.options):
+            if text in str(option):
+                self.host.cursor = i
+                break
 
 class Header(str):
     pass
@@ -312,6 +316,7 @@ class HeaderPlugin(Plugin):
         for option in options:
             if isinstance(option.text, Header):
                 option.attrs["header"] = True
+                option.attrs["showAlways"] = True
                 option.result = None
         return options
 
