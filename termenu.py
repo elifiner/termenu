@@ -1,6 +1,4 @@
 import sys
-sys.path.append("..")
-
 import ansi
 
 def pluggable(method):
@@ -197,11 +195,11 @@ class Termenu(object):
 
     @pluggable
     def _print_menu(self):
-        _write("\r")
+        ansi.write("\r")
         for index, option in enumerate(self._get_window()):
             option = str(option)
             option = self._adjust_width(option)
-            _write(self._decorate(str(option), **self._decorate_flags(index)) + "\n")
+            ansi.write(self._decorate(str(option), **self._decorate_flags(index)) + "\n")
             ansi.clear_eol()
 
     @pluggable
@@ -287,9 +285,9 @@ class FilterPlugin(Plugin):
 
         for i in xrange(0, self.host.height - len(self.host.options)):
             ansi.clear_eol()
-            _write("\n")
+            ansi.write("\n")
         if self.text is not None:
-            _write("/" + "".join(self.text))
+            ansi.write("/" + "".join(self.text))
             ansi.show_cursor()
         ansi.clear_eol()
 
@@ -399,11 +397,11 @@ class Minimenu(object):
             for key in keyboard.keyboard_listener():
                 if key == "enter":
                     self._clear_menu()
-                    _write(self.options[self.cursor])
+                    ansi.write(self.options[self.cursor])
                     return self.options[self.cursor]
                 elif key == "esc":
                     self._clear_menu()
-                    _write("<esc>")
+                    ansi.write("<esc>")
                     return None
                 elif key == "left":
                     self.cursor = max(0, self.cursor - 1)
@@ -412,7 +410,7 @@ class Minimenu(object):
                 self._print_menu(rewind=True)
         finally:
             ansi.show_cursor()
-            _write("\n")
+            ansi.write("\n")
 
     def _make_menu(self, _decorate=True):
         menu = []
@@ -428,15 +426,11 @@ class Minimenu(object):
         menu = self._make_menu()
         if rewind:
             menu = "\b"*len(self._make_menu(_decorate=False)) + menu
-        _write(menu)
+        ansi.write(menu)
 
     def _clear_menu(self):
         menu = self._make_menu(_decorate=False)
-        _write("\b"*len(menu)+" "*len(menu)+"\b"*len(menu))
-
-def _write(s):
-    sys.stdout.write(s)
-    sys.stdout.flush()
+        ansi.write("\b"*len(menu)+" "*len(menu)+"\b"*len(menu))
 
 def redirect_std():
     """

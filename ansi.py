@@ -1,49 +1,51 @@
+import os
 import sys
 
 COLORS = dict(black=0, red=1, green=2, yellow=3, blue=4, magenta=5, cyan=6, white=7, default=9)
 
-def _print(text):
-    sys.stdout.write(text)
-    sys.stdout.flush()
+_stdout = os.fdopen(sys.stdout.fileno(), "w", 0)
+def write(s):
+    # unbuffered write
+    _stdout.write(s)
 
 def up(n=1):
-    _print("\x1b[%dA" % n)
+    write("\x1b[%dA" % n)
 
 def down(n=1):
-    _print("\x1b[%dB" % n)
+    write("\x1b[%dB" % n)
 
 def forward(n=1):
-    _print("\x1b[%dC" % n)
+    write("\x1b[%dC" % n)
 
 def back(n=1):
-    _print("\x1b[%dD" % n)
+    write("\x1b[%dD" % n)
 
 def move_horizontal(column=1):
-    _print("\x1b[%dG" % column)
+    write("\x1b[%dG" % column)
 
 def move(row, column):
-    _print("\x1b[%d;%dH" % (row, column))
+    write("\x1b[%d;%dH" % (row, column))
 
 def clear_screen():
-    _print("\x1b[2J")
+    write("\x1b[2J")
 
 def clear_eol():
-    _print("\x1b[0K")
+    write("\x1b[0K")
 
 def clear_line():
-    _print("\x1b[2K")
+    write("\x1b[2K")
 
 def save_position():
-    _print("\x1b[s")
+    write("\x1b[s")
 
 def restore_position():
-    _print("\x1b[u")
+    write("\x1b[u")
 
 def hide_cursor():
-    _print("\x1b[?25l")
+    write("\x1b[?25l")
 
 def show_cursor():
-    _print("\x1b[?25h")
+    write("\x1b[?25h")
 
 def colorize(string, color, background=None, bright=False):
     color = 30 + COLORS.get(color, COLORS["default"])
