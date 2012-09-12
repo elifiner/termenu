@@ -353,7 +353,7 @@ class HeaderPlugin(Plugin):
         if header:
             option = "{0:<{width}}".format(option, width=self.host._maxOptionLen)
             if active:
-                option = " " + ansi.colorize(option, "white", "black", bright=True)
+                option = " " + ansi.colorize(option, "black", "white", bright=True)
             else:
                 option = " " + ansi.colorize(option, "white", bright=True)
             return option
