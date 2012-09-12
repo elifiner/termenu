@@ -30,7 +30,7 @@ allow a modicum of interactivity in regular command line utilities.
 
 setup(
     name='termenu',
-    version='1.0.0',
+    version='1.0.1',
     description='Interactive in-line menus for Unix-based terminals',
     long_description=DESCRIPTION,
     author='Eli Finer',
@@ -39,7 +39,7 @@ setup(
     url='https://github.com/gooli/termenu',
     package_dir={'termenu':'.'},
     packages=['termenu'],
-    scripts=['termenu', 'filemenu'],
+    scripts=['termenu'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
