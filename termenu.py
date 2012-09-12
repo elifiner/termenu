@@ -83,6 +83,7 @@ class Termenu(object):
     def _make_option_objects(self, options, results):
         return [self._Option(o, r) for o, r in zip(options, results or options)]
 
+    @pluggable
     def _set_default(self, default):
         # handle default selection of multiple options
         if isinstance(default, list) and default:
@@ -309,6 +310,16 @@ class Header(str):
     pass
 
 class HeaderPlugin(Plugin):
+    def _set_default(self, default):
+        if default:
+            return self.parent._set_default()
+        else:
+            self.host.scroll = 0
+            for i, option in enumerate(self.host.options):
+                if not option.attrs.get("header"):
+                    self.host.cursor = i
+                    break
+
     def _make_option_objects(self, options, results):
         options = self.parent._make_option_objects(options, results)
         for option in options:
