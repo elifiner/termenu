@@ -59,7 +59,7 @@ Examples:
         results = [items[0]]
     else:
         if options.inline:
-            results = [termenu.Minimenu(items, default=options.default).show()]
+            results = [str(termenu.Minimenu(items, default=options.default).show())]
         else:
             results = termenu.Termenu(items,
                 default=options.default,
