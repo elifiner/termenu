@@ -2,6 +2,11 @@ import sys
 sys.path.insert(0, "..")
 import termenu
 
+"""
+This example shows how you could implement a menu for a very long (or endless)
+list of options.
+"""
+
 class IteratorList(object):
     def __init__(self, iter):
         self._iter = iter

@@ -1,6 +1,12 @@
-#!/usr/bin/env python
 import os
+import sys
+sys.path.insert(0, "..")
 import termenu
+
+"""
+This example shows how to implement a file browser using multi-level menus
+and custom menu item decoration.
+"""
 
 class FilePlugin(termenu.Plugin):
     # TODO go back one level using backspace
