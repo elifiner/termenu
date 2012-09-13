@@ -47,7 +47,7 @@ class Termenu(object):
             register_plugin(self, plugin)
         self.options = self._make_option_objects(options, results)
         self.height = min(height or 10, len(self.options))
-        self.width = width or max(len(o.text) for o in self.options)
+        self.width = self._compute_width(width, self.options)
         self.multiselect = multiselect
         self.cursor = 0
         self.scroll = 0
@@ -111,6 +111,17 @@ class Termenu(object):
             else:
                 self.cursor = index % self.height + 1
                 self.scroll = len(self.options) - self.height
+
+    def _compute_width(self, width, options):
+        termwidth = get_terminal_size()[0]
+        decorations = len(self._decorate(""))
+        if width:
+            maxwidth = min(width, termwidth)
+        else:
+            maxwidth = termwidth
+        maxwidth -= decorations
+        maxoption = max(len(o.text) for o in options)
+        return min(maxoption, maxwidth)
 
     def _get_index(self, s):
         matches = [i for i, o in enumerate(self.options) if o.text == s]
@@ -211,7 +222,7 @@ class Termenu(object):
 
     @pluggable
     def _adjust_width(self, option):
-        if self.width:
+        if len(option) > self.width:
             option = shorten(option, self.width)
         if len(option) < self.width:
             option = option + " " * (self.width - len(option))
@@ -476,9 +487,15 @@ def redirect_std():
     return stdin, stdout
 
 def shorten(s, l=100):
-    if len(s) <= l:
+    if len(s) <= l or l < 3:
         return s
     return s[:l/2-2] + "..." + s[-l/2+1:]
+
+def get_terminal_size():
+    import fcntl, termios, struct
+    h, w, hp, wp = struct.unpack('HHHH', fcntl.ioctl(sys.stdin,
+        termios.TIOCGWINSZ, struct.pack('HHHH', 0, 0, 0, 0)))
+    return w, h
 
 if __name__ == "__main__":
     options = ["option-%06d" % i for i in xrange(1,100)]
