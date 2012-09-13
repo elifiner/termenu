@@ -313,12 +313,12 @@ class FilterPlugin(Plugin):
         text = "".join(self.text or []).lower()
         # filter the matching options
         for option in self._allOptions:
-            if text in str(option).lower() or option.attrs.get("showAlways"):
+            if text in option.text.lower() or option.attrs.get("showAlways"):
                 self.host.options.append(option)
         # select the first matching element (showAlways elements might not match)
         self.host.scroll = 0
         for i, option in enumerate(self.host.options):
-            if text in str(option):
+            if text in option.text:
                 self.host.cursor = i
                 break
 
