@@ -30,7 +30,7 @@ allow a modicum of interactivity in regular command line utilities.
 
 setup(
     name='termenu',
-    version='1.0.1',
+    version='1.0.2',
     description='Interactive in-line menus for Unix-based terminals',
     long_description=DESCRIPTION,
     author='Eli Finer',

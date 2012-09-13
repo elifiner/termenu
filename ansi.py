@@ -1,4 +1,5 @@
 import sys
+import re
 
 COLORS = dict(black=0, red=1, green=2, yellow=3, blue=4, magenta=5, cyan=6, white=7, default=9)
 
@@ -57,9 +58,39 @@ def highlight(string, background):
     stopcmd = "\x1b[m"
     return bkcmd + string.replace(stopcmd, stopcmd + bkcmd) + stopcmd
 
+ANSI_COLOR_REGEX = "\x1b\[(\d+)?(;\d+)*;?m"
+
 def decolorize(string):
-    import re
-    return re.sub("\x1b\[(\d+)?(;\d+)*m", "", string)
+    return re.sub(ANSI_COLOR_REGEX, "", string)
+
+class ansistr(str):
+    def __init__(self, s):
+        if not isinstance(s, str):
+            s = str(s)
+        self.__str = s
+        self.__parts = [m.span() for m in re.finditer("(%s)|(.)" % ANSI_COLOR_REGEX, s)]
+        self.__len = sum(1 if p[1]-p[0]==1 else 0 for p in self.__parts)
+
+    def __len__(self):
+        return self.__len
+
+    def __getslice__(self, i, j):
+        parts = []
+        count = 0
+        for start, end in self.__parts:
+            if end - start == 1:
+                count += 1
+                if i <= count < j:
+                    parts.append(self.__str[start:end])
+            else:
+                parts.append(self.__str[start:end])
+        return ansistr("".join(parts))
+
+    def __add__(self, s):
+        return ansistr(self.__str + s)
+
+    def decolorize(self):
+        return decolorize(self.__str)
 
 if __name__ == "__main__":
     # Print all colors

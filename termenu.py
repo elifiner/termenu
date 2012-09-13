@@ -41,20 +41,16 @@ class Termenu(object):
             self.result = result
             self.selected = False
             self.attrs = attrs
-        def __str__(self):
-            return self.text
-        def __len__(self):
-            return len(self.text)
 
-    def __init__(self, options, results=None, default=None, height=None, multiselect=True, plugins=None):
+    def __init__(self, options, results=None, default=None, height=None, width=None, multiselect=True, plugins=None):
         for plugin in plugins or []:
             register_plugin(self, plugin)
         self.options = self._make_option_objects(options, results)
         self.height = min(height or 10, len(self.options))
+        self.width = width or max(len(o.text) for o in self.options)
         self.multiselect = multiselect
         self.cursor = 0
         self.scroll = 0
-        self._maxOptionLen = max(len(o) for o in self.options)
         self._aborted = False
         self._set_default(default)
 
@@ -99,7 +95,7 @@ class Termenu(object):
             if not self.multiselect:
                 raise ValueError("multiple defaults passed, but multiselect is False")
             for option in self.options:
-                if str(option) in default:
+                if option.text in default:
                     option.selected = True
             default = default[0]
 
@@ -117,7 +113,7 @@ class Termenu(object):
                 self.scroll = len(self.options) - self.height
 
     def _get_index(self, s):
-        matches = [i for i, o in enumerate(self.options) if str(o) == s]
+        matches = [i for i, o in enumerate(self.options) if o.text == s]
         if matches:
             return matches[0]
         else:
@@ -208,14 +204,18 @@ class Termenu(object):
     def _print_menu(self):
         ansi.write("\r")
         for index, option in enumerate(self._get_window()):
-            option = str(option)
+            option = option.text
             option = self._adjust_width(option)
-            ansi.write(self._decorate(str(option), **self._decorate_flags(index)) + "\n")
+            ansi.write(self._decorate(option, **self._decorate_flags(index)) + "\n")
             ansi.clear_eol()
 
     @pluggable
     def _adjust_width(self, option):
-        return "{0:<{width}}".format(option, width=self._maxOptionLen)
+        if self.width:
+            option = shorten(option, self.width)
+        if len(option) < self.width:
+            option = option + " " * (self.width - len(option))
+        return option
 
     @pluggable
     def _decorate_flags(self, index):
@@ -356,7 +356,7 @@ class HeaderPlugin(Plugin):
         active = flags.get("active", False)
         header = flags.get("header", False)
         if header:
-            option = "{0:<{width}}".format(option, width=self.host._maxOptionLen)
+            option = "{0:<{width}}".format(option, width=self.host.width)
             if active:
                 option = " " + ansi.colorize(option, "black", "white", bright=True)
             else:
@@ -370,11 +370,8 @@ class Precolored(Plugin):
         options = self.parent._make_option_objects(options, results)
         for option in options:
             option.result = ansi.decolorize(option.text)
-        self._maxOptionLen = max(len(option.result) for option in options)
+            option.text = ansi.ansistr(option.text)
         return options
-
-    def _adjust_width(self, option):
-        return option + (" " * (self._maxOptionLen - len(ansi.decolorize(option))))
 
     def _decorate(self, option, **flags):
         active = flags.get("active", False)
@@ -477,6 +474,11 @@ def redirect_std():
     if not sys.stdout.isatty():
         sys.stdout = open("/dev/tty", "w", 0)
     return stdin, stdout
+
+def shorten(s, l=100):
+    if len(s) <= l:
+        return s
+    return s[:l/2-2] + "..." + s[-l/2+1:]
 
 if __name__ == "__main__":
     options = ["option-%06d" % i for i in xrange(1,100)]
