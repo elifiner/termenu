@@ -1,6 +1,11 @@
 import sys
 import ansi
 
+try:
+    xrange()
+except:
+    xrange = range
+
 def pluggable(method):
     """
     Mark a class method as extendable with plugins.
