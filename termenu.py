@@ -66,7 +66,7 @@ class Termenu(object):
             selected = [o.result for o in self.options if o.selected]
             if not selected:
                 selected.append(self._get_active_option().result)
-            return selected
+            return selected if self.multiselect else selected[0]
 
     def show(self):
         import keyboard
