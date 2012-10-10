@@ -1,7 +1,7 @@
 import sys
 import ansi
 
-def show_menu(title, options, results=None, default=None, height=None, width=None, multiselect=True, precolored=False):
+def show_menu(title, options, results=None, default=None, height=None, width=None, multiselect=False, precolored=False):
     """
     Shows an interactive menu in the terminal.
 
@@ -361,7 +361,7 @@ class Header(str):
 class HeaderPlugin(Plugin):
     def _set_default(self, default):
         if default:
-            return self.parent._set_default()
+            return self.parent._set_default(default)
         else:
             self.host.scroll = 0
             for i, option in enumerate(self.host.options):
