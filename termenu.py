@@ -6,23 +6,28 @@ def show_menu(title, options, default=None, height=None, width=None, multiselect
     Shows an interactive menu in the terminal.
 
     Arguments:
-        options: list of menu options, wrap an option with Header(...) to add inline headers
+        options: list of menu options
         default: initial option to highlight
         height: maximum height of the menu
         width: maximum width of the menu
         multiselect: allow multiple items to be selected?
-        precolored: allow strings with ANSI colors embedded
+        precolored: allow strings with embedded ANSI commands
 
     Returns:
-        * with `multiselect`, returns list of selected options otherwise a single option
-        * if menu is cancelled (Esc pressed), returns None
-
-    Note:
-        * if an option is a 2-tuple, the first item will be displayed and the second item
-          will be returned when the option is selected.
+        * If multiselect is True, returns a list of selected options.
+        * If mutliselect is False, returns the selected option.
+        * If an option is a 2-tuple, the first item will be displayed and the
+          second item will be returned.
+        * If menu is cancelled (Esc pressed), returns None.
+        *
+    Notes:
+        * You can pass OptionGroup objects to `options` to create sub-headers
+          in the menu.
     """
 
-    plugins = [FilterPlugin(), HeaderPlugin()]
+    plugins = [FilterPlugin()]
+    if isinstance(options[0], OptionGroup):
+        plugins.append(OptionGroupPlugin())
     if title:
         plugins.append(TitlePlugin(title))
     if precolored:
@@ -361,10 +366,13 @@ class FilterPlugin(Plugin):
                 self.host.cursor = i
                 break
 
-class Header(str):
-    pass
 
-class HeaderPlugin(Plugin):
+class OptionGroup(object):
+    def __init__(self, header, options):
+        self.header = header
+        self.options = options
+
+class OptionGroupPlugin(Plugin):
     def _set_default(self, default):
         if default:
             return self.parent._set_default(default)
@@ -376,17 +384,22 @@ class HeaderPlugin(Plugin):
                     break
 
     def _make_option_objects(self, options):
-        options = self.parent._make_option_objects(options)
-        for option in options:
-            if isinstance(option.text, Header):
-                option.attrs["header"] = True
-                option.attrs["showAlways"] = True
-                option.result = None
-        return options
+        flatOptions = []
+        for group in options:
+            header = Termenu._Option((group.header, None))
+            header.attrs["showAlways"] = True
+            header.attrs["header"] = True
+            flatOptions.append(header)
+            flatOptions.extend(Termenu._Option(o) for o in group.options)
+        return flatOptions
 
     def _on_enter(self):
         # can't select a header
-        if self.host._get_active_option().attrs.get("header") and self.host.get_result() == [None]:
+        if self.host._get_active_option().attrs.get("header"):
+            if self.host.multiselect and self.host.get_result() != [None]:
+                return True
+            else:
+                return False
             return False
         else:
             return self.parent._on_enter()
@@ -538,8 +551,6 @@ def get_terminal_size():
     return w, h
 
 if __name__ == "__main__":
-    options = ["option-%06d" % i for i in xrange(1,100)]
-    options.insert(0, Header("One"))
-    options.insert(3, Header("Three"))
-    options.insert(17, Header("Seventeen"))
-    print(show_menu("List Of Numbers", options))
+    odds = OptionGroup("Odd Numbers", [("%06d" % i, i) for i in xrange(1, 10, 2)])
+    evens = OptionGroup("Even Numbers", [("%06d" % i, i) for i in xrange(2, 10, 2)])
+    print(show_menu("List Of Numbers", [odds, evens], multiselect=True))
