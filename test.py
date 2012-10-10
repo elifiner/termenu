@@ -202,7 +202,7 @@ class MultiSelect(unittest.TestCase):
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_space()
         assert strmenu(menu) == "(01) 02 03 04"
-        assert " ".join(menu.get_result()) == "01"
+        assert menu.get_result() == "01"
 
 class Results(unittest.TestCase):
     def test_single(self):
