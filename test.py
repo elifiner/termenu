@@ -206,7 +206,7 @@ class MultiSelect(unittest.TestCase):
 
 class Results(unittest.TestCase):
     def test_single(self):
-        menu = Termenu(OPTIONS, results=RESULTS, height=4)
+        menu = Termenu(zip(OPTIONS, RESULTS), height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_down()
         menu._on_down()
@@ -214,7 +214,7 @@ class Results(unittest.TestCase):
         assert menu.get_result() == ["result-03"]
 
     def test_multiple(self):
-        menu = Termenu(OPTIONS, results=RESULTS, height=4)
+        menu = Termenu(zip(OPTIONS, RESULTS), height=4)
         assert strmenu(menu) == "(01) 02 03 04"
         menu._on_space()
         menu._on_space()

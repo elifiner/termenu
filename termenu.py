@@ -1,13 +1,12 @@
 import sys
 import ansi
 
-def show_menu(title, options, results=None, default=None, height=None, width=None, multiselect=False, precolored=False):
+def show_menu(title, options, default=None, height=None, width=None, multiselect=False, precolored=False):
     """
     Shows an interactive menu in the terminal.
 
     Arguments:
-        options: list of menu options (strings), wrap an option with Header(...) to add inline headers
-        results: list of results to return when option is selected
+        options: list of menu options, wrap an option with Header(...) to add inline headers
         default: initial option to highlight
         height: maximum height of the menu
         width: maximum width of the menu
@@ -15,9 +14,12 @@ def show_menu(title, options, results=None, default=None, height=None, width=Non
         precolored: allow strings with ANSI colors embedded
 
     Returns:
-        with `multiselect`, returns list of selected options otherwise a single option
-        if menu is cancelled (Esc pressed), returns None
-        if `results` supplied, returns the appropriate result instead of the option text
+        * with `multiselect`, returns list of selected options otherwise a single option
+        * if menu is cancelled (Esc pressed), returns None
+
+    Note:
+        * if an option is a 2-tuple, the first item will be displayed and the second item
+          will be returned when the option is selected.
     """
 
     plugins = [FilterPlugin(), HeaderPlugin()]
@@ -25,7 +27,7 @@ def show_menu(title, options, results=None, default=None, height=None, width=Non
         plugins.append(TitlePlugin(title))
     if precolored:
         plugins.append(PrecoloredPlugin())
-    menu = Termenu(options, results=results, default=default, height=height,
+    menu = Termenu(options, default=default, height=height,
                    width=width, multiselect=multiselect, plugins=plugins)
     return menu.show()
 
@@ -69,16 +71,20 @@ class Plugin(object):
 
 class Termenu(object):
     class _Option(object):
-        def __init__(self, text, result, **attrs):
-            self.text = text
-            self.result = result
+        def __init__(self, option, **attrs):
+            if isinstance(option, tuple) and len(option) == 2:
+                self.text = option[0]
+                self.result = option[1]
+            else:
+                self.text = option
+                self.result = option
             self.selected = False
             self.attrs = attrs
 
-    def __init__(self, options, results=None, default=None, height=None, width=None, multiselect=True, plugins=None):
+    def __init__(self, options, default=None, height=None, width=None, multiselect=True, plugins=None):
         for plugin in plugins or []:
             register_plugin(self, plugin)
-        self.options = self._make_option_objects(options, results)
+        self.options = self._make_option_objects(options)
         self.height = min(height or 10, len(self.options))
         self.width = self._compute_width(width, self.options)
         self.multiselect = multiselect
@@ -118,8 +124,8 @@ class Termenu(object):
         ansi.up(self.height)
 
     @pluggable
-    def _make_option_objects(self, options, results):
-        return [self._Option(o, r) for o, r in zip(options, results or options)]
+    def _make_option_objects(self, options):
+        return [self._Option(o) for o in options]
 
     @pluggable
     def _set_default(self, default):
@@ -306,8 +312,8 @@ class FilterPlugin(Plugin):
     def __init__(self):
         self.text = None
 
-    def _make_option_objects(self, options, results):
-        objects = self.parent._make_option_objects(options, results)
+    def _make_option_objects(self, options):
+        objects = self.parent._make_option_objects(options)
         self._allOptions = objects[:]
         return objects
 
@@ -369,8 +375,8 @@ class HeaderPlugin(Plugin):
                     self.host.cursor = i
                     break
 
-    def _make_option_objects(self, options, results):
-        options = self.parent._make_option_objects(options, results)
+    def _make_option_objects(self, options):
+        options = self.parent._make_option_objects(options)
         for option in options:
             if isinstance(option.text, Header):
                 option.attrs["header"] = True
@@ -410,11 +416,12 @@ class HeaderPlugin(Plugin):
             return self.parent._decorate(option, **flags)
 
 class PrecoloredPlugin(Plugin):
-    def _make_option_objects(self, options, results):
-        options = self.parent._make_option_objects(options, results)
+    def _make_option_objects(self, options):
+        options = self.parent._make_option_objects(options)
         for option in options:
-            option.result = ansi.decolorize(option.text)
             option.text = ansi.ansistr(option.text)
+            if isinstance(option.result, str):
+                option.result = ansi.decolorize(option.result)
         return options
 
     def _decorate(self, option, **flags):
