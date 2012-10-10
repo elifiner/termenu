@@ -1,6 +1,34 @@
 import sys
 import ansi
 
+def show_menu(title, options, results=None, default=None, height=None, width=None, multiselect=True, precolored=False):
+    """
+    Shows an interactive menu in the terminal.
+
+    Arguments:
+        options: list of menu options (strings), wrap an option with Header(...) to add inline headers
+        results: list of results to return when option is selected
+        default: initial option to highlight
+        height: maximum height of the menu
+        width: maximum width of the menu
+        multiselect: allow multiple items to be selected?
+        precolored: allow strings with ANSI colors embedded
+
+    Returns:
+        with `multiselect`, returns list of selected options otherwise a single option
+        if menu is cancelled (Esc pressed), returns None
+        if `results` supplied, returns the appropriate result instead of the option text
+    """
+
+    plugins = [FilterPlugin(), HeaderPlugin()]
+    if title:
+        plugins.append(TitlePlugin(title))
+    if precolored:
+        plugins.append(PrecoloredPlugin())
+    menu = Termenu(options, results=results, default=default, height=height,
+                   width=width, multiselect=multiselect, plugins=plugins)
+    return menu.show()
+
 try:
     xrange()
 except:
@@ -381,7 +409,7 @@ class HeaderPlugin(Plugin):
         else:
             return self.parent._decorate(option, **flags)
 
-class Precolored(Plugin):
+class PrecoloredPlugin(Plugin):
     def _make_option_objects(self, options, results):
         options = self.parent._make_option_objects(options, results)
         for option in options:
@@ -507,9 +535,4 @@ if __name__ == "__main__":
     options.insert(0, Header("One"))
     options.insert(3, Header("Three"))
     options.insert(17, Header("Seventeen"))
-    menu = Termenu(options, plugins=[HeaderPlugin(), FilterPlugin(), TitlePlugin("List Of Numbers")])
-#~     menu = Termenu(["option-%06d" % i for i in xrange(1,100)], height=10, plugins=[Precolored()])
-    print(menu.show())
-#~     print "Would you like to continue? ",
-#~     result = Minimenu(["Abort", "Retry", "Fail"], "Fail").show()
-#~     print result
+    print(show_menu("List Of Numbers", options))
