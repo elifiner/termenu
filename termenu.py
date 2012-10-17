@@ -362,7 +362,7 @@ class FilterPlugin(Plugin):
         # select the first matching element (showAlways elements might not match)
         self.host.scroll = 0
         for i, option in enumerate(self.host.options):
-            if text in option.text:
+            if not option.attrs.get("showAlways") and text in option.text.lower():
                 self.host.cursor = i
                 break
 
@@ -385,13 +385,21 @@ class OptionGroupPlugin(Plugin):
 
     def _make_option_objects(self, options):
         flatOptions = []
+        HEADER = object()
         for group in options:
-            header = Termenu._Option((group.header, None))
-            header.attrs["showAlways"] = True
-            header.attrs["header"] = True
-            flatOptions.append(header)
-            flatOptions.extend(Termenu._Option(o) for o in group.options)
-        return flatOptions
+            if isinstance(group, OptionGroup):
+                flatOptions.append((group.header, HEADER))
+                flatOptions.extend(group.options)
+            else:
+                flatOptions.append(group)
+        optionObjects = self.parent._make_option_objects(flatOptions)
+
+        for opt in optionObjects:
+            if opt.result is HEADER:
+                opt.attrs["showAlways"] = True
+                opt.attrs["header"] = True
+                opt.result = None
+        return optionObjects
 
     def _on_enter(self):
         # can't select a header
