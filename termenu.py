@@ -26,7 +26,7 @@ def show_menu(title, options, default=None, height=None, width=None, multiselect
     """
 
     plugins = [FilterPlugin()]
-    if isinstance(options[0], OptionGroup):
+    if any(isinstance(opt, OptionGroup) for opt in options):
         plugins.append(OptionGroupPlugin())
     if title:
         plugins.append(TitlePlugin(title))
