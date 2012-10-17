@@ -78,11 +78,11 @@ class Termenu(object):
     class _Option(object):
         def __init__(self, option, **attrs):
             if isinstance(option, tuple) and len(option) == 2:
-                self.text = option[0]
-                self.result = option[1]
+                self.text, self.result = option
             else:
-                self.text = option
-                self.result = option
+                self.text = self.result = option
+            if not isinstance(self.text, basestring):
+                self.text = str(self.text)
             self.selected = False
             self.attrs = attrs
 
