@@ -86,7 +86,7 @@ class Termenu(object):
             self.selected = False
             self.attrs = attrs
 
-    def __init__(self, options, default=None, height=None, width=None, multiselect=True, plugins=None):
+    def __init__(self, options, default=None, height=None, width=None, multiselect=True, heartbeat=None, plugins=None):
         for plugin in plugins or []:
             register_plugin(self, plugin)
         self.options = self._make_option_objects(options)
@@ -95,6 +95,7 @@ class Termenu(object):
         self.multiselect = multiselect
         self.cursor = 0
         self.scroll = 0
+        self._heartbeat = heartbeat
         self._aborted = False
         self._set_default(default)
 
@@ -113,7 +114,7 @@ class Termenu(object):
         ansi.save_position()
         ansi.hide_cursor()
         try:
-            for key in keyboard.keyboard_listener():
+            for key in keyboard.keyboard_listener(self._heartbeat):
                 stop = self._on_key(key)
                 if stop:
                     return self.get_result()
@@ -191,6 +192,10 @@ class Termenu(object):
         func = "_on_" + key
         if hasattr(self, func):
             return getattr(self, func)()
+
+    @pluggable
+    def _on_heartbeat(self):
+        pass
 
     def _on_down(self):
         height = min(self.height, len(self.options))

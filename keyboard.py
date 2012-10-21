@@ -77,13 +77,14 @@ class RawTerminal(object):
     def __exit__(self, *args):
         self.close()
 
-def keyboard_listener():
+def keyboard_listener(heartbeat=None):
     with RawTerminal(blocking=False) as terminal:
         # return keys
         sequence = ""
         while True:
+            yielded = False
             # wait for keys to become available
-            select.select([STDIN], [], [])
+            select.select([STDIN], [], [], heartbeat)
             # read all available keys
             while True:
                 try:
@@ -97,15 +98,19 @@ def keyboard_listener():
                 for seq in ANSI_SEQUENCES.values():
                     if sequence[:len(seq)] == seq:
                         yield KEY_NAMES[seq]
+                        yielded = True
                         sequence = sequence[len(seq):]
                         break
                 # handle normal keys
                 else:
                     for key in sequence:
                         yield KEY_NAMES.get(key, key)
+                        yielded = True
                     sequence = ""
+            if not yielded:
+                yield "heartbeat"
     
 if __name__ == "__main__":
-    for key in keyboard_listener():
+    for key in keyboard_listener(0.5):
         print(key)
 
