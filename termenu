@@ -50,7 +50,12 @@ Examples:
     if not items:
         parser.error("no menu items provided")
 
+    # fixed extra spaces in items
     items = [re.sub("\s+", " ", item.strip()) for item in items]
+    # make the list unique
+    seen = set()
+    items = [x for x in items if x not in seen and not seen.add(x)]
+
     plugins = [termenu.FilterPlugin()]
 
     if options.precolored:
