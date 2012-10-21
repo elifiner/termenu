@@ -31,19 +31,16 @@ def show_long_menu(optionsIter, pagesize=30):
     start = 0
     while True:
         page = options[start:start+pagesize]
-        results = page[:]
         if len(page) == pagesize:
-            page.append(">>")
-            results.append(Next)
+            page.append((">>", Next))
         if start > 0:
-            page.insert(0, "<<")
-            results.insert(0, Previous)
-        result = termenu.Termenu(page, results=results).show()
+            page.insert(0, ("<<", Previous))
+        result = termenu.Termenu(page, multiselect=False).show()
         if not result:
             break
-        if result == [Next]:
+        if result == Next:
             start = start + pagesize
-        elif result == [Previous]:
+        elif result == Previous:
             start = start - pagesize
         else:
             break
