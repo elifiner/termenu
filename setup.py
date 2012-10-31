@@ -17,6 +17,7 @@
 # along with termenu.  If not, see <http://www.gnu.org/licenses/>.
 
 from distutils.core import setup
+from version import version
 
 DESCRIPTION = """
 Termenu is a command line utility and Python library for displaying console
@@ -30,7 +31,7 @@ allow a modicum of interactivity in regular command line utilities.
 
 setup(
     name='termenu',
-    version='1.1.0',
+    version=version,
     description='Interactive in-line menus for Unix-based terminals',
     long_description=DESCRIPTION,
     author='Eli Finer',
