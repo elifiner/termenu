@@ -102,7 +102,7 @@ class Termenu(object):
 
     def get_result(self):
         if self._aborted:
-            return None
+            return [] if self.multiselect else None
         else:
             selected = [o.result for o in self.options if o.selected]
             if not selected:
