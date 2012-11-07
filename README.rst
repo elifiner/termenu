@@ -1,11 +1,11 @@
 Abstract
---------
+========
 
 Termenu is a command line utility and Python library for displaying console
 based interactive menus.
 
 Description
------------
+===========
 
 Traditionally there are two types of applications running the Unix shell: pure
 command line utilities such as grep, sed and awk and full screen interactive
@@ -40,11 +40,11 @@ A simple modification will start the ``vim`` editor with the selected files::
   $ vim `find . -name "*.py" | termenu`
 
 Usage
------
+=====
 ::
 
   termenu [items] [options]
-  
+
   --help                Show help message
   -f FILE, --file=FILE  Take menu items from a file
   -d OPTION, --default=OPTION
@@ -56,7 +56,7 @@ Usage
   --single              Single selection only
 
 Examples
---------
+========
 
 Show the contents of a recent commit in ``git``::
 
@@ -67,7 +67,7 @@ Ask a multiple choice question::
   $ echo -n "Would you like to exit? " && ./termenu -i Yes No Maybe
 
 See Also
---------
+========
 
 If you like termenu, you may find `gitter <http://github.com/gooli/gitter>`_
 interesting as well. It's a termenu based git client that acts exactly like the
@@ -75,6 +75,51 @@ standard command line git but shows a menu whenver appropriate. It's similar to
 how git works under zsh, but works with standard shells and has smarter menus.
 
 Name
-----
+====
 
 Oh, and if you were wondering, termenu is a combination of the words *terminal* and *menu*.
+
+Version History
+===============
+
+1.1.1
+-----
+
+* fixed 'Resource temporarily unavailable' bug
+* reduced flickering and amount of screen updates
+
+1.1.0
+-----
+
+* added simple show_menu function as a frontend for simple use in Python scripts
+* added support for time-based updates and added example of a slow loading menu
+* python 3k compatibility (by bladmorv)
+* many small bug fixes
+
+1.0.2
+-----
+
+* added width restriction for the menu (including support for
+  ANSI menu items)
+
+1.0.1
+-----
+
+* added support for a static title above the menu
+* added some complex examples (filemenu and longmeny)
+
+1.0.0
+-----
+
+* completely reimplemented based on plugins
+* includes support for multi-selection and filtering
+* removed multi-column support
+* added simple one line minimenu
+* added comprehensive unit tests
+* added support for ANSI colored menu items
+* added support multiple headers
+
+0.3.0
+-----
+
+* first public version

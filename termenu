@@ -2,7 +2,6 @@
 import re
 import sys
 import termenu
-from version import version
 
 def main():
     redirectedStdin, redirectedStdout = termenu.redirect_std()
@@ -18,7 +17,7 @@ Examples:
   ls | termenu
   termenu -i Abort Retry Fail
   termenu -f file_with_options.txt
-""" % version
+""" % termenu.version
     parser = OptionParser(usage="Usage: %prog [items]", description=description, formatter=MyHelpFormatter(), add_help_option=False)
     parser.add_option("--help", help="Show help message", action="store_true", default=False)
     parser.add_option("-f", "--file", help="Take menu items from a file", metavar="FILE")

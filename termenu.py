@@ -1,5 +1,6 @@
 import sys
 import ansi
+from version import version
 
 def show_menu(title, options, default=None, height=None, width=None, multiselect=False, precolored=False):
     """
