@@ -97,6 +97,7 @@ class Termenu(object):
         self.scroll = 0
         self._heartbeat = heartbeat
         self._aborted = False
+        self._lineCache = {}
         self._set_default(default)
 
     def get_result(self):
@@ -252,6 +253,9 @@ class Termenu(object):
     def _on_enter(self):
         return True # stop loop
 
+    def _clear_cache(self):
+        self._lineCache = {}
+
     @pluggable
     def _clear_menu(self):
         ansi.restore_position()
@@ -266,8 +270,12 @@ class Termenu(object):
         for index, option in enumerate(self._get_window()):
             option = option.text
             option = self._adjust_width(option)
-            ansi.write(self._decorate(option, **self._decorate_flags(index)) + "\n")
-            ansi.clear_eol()
+            option = self._decorate(option, **self._decorate_flags(index))
+            if self._lineCache.get(index) == option:
+                ansi.down()
+            else:
+                ansi.write(option + "\n")
+                self._lineCache[index] = option
 
     @pluggable
     def _adjust_width(self, option):
@@ -358,6 +366,7 @@ class FilterPlugin(Plugin):
         ansi.clear_eol()
 
     def _refilter(self):
+        self.host._clear_cache()
         self.host.options = []
         text = "".join(self.text or []).lower()
         # filter the matching options
@@ -474,7 +483,7 @@ class PrecoloredPlugin(Plugin):
 class TitlePlugin(Plugin):
     def __init__(self, title):
         self.title = title
-        
+
     def _goto_top(self):
         self.parent._goto_top()
         ansi.up(1)
