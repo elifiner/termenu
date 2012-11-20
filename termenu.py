@@ -110,6 +110,7 @@ class Termenu(object):
                 selected.append(self._get_active_option().result)
             return selected if self.multiselect else selected[0]
 
+    @pluggable
     def show(self):
         import keyboard
         self._print_menu()
