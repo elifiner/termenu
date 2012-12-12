@@ -468,7 +468,7 @@ class PrecoloredPlugin(Plugin):
         moreBelow = flags.get("moreBelow", False)
 
         # add selection / cursor decorations
-        option = ("* " if selected else "  ") + (">" if active else " ") + option
+        option = ("* " if selected else "  ") + ("> " if active else "  ") + option
         if active:
             option = ansi.highlight(option, "black")
 
