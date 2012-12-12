@@ -59,7 +59,7 @@ Examples:
     plugins = [termenu.FilterPlugin()]
 
     if options.precolored:
-        plugins.append(termenu.Precolored())
+        plugins.append(termenu.PrecoloredPlugin())
 
     if options.title:
         plugins.append(termenu.TitlePlugin(options.title))
