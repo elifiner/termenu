@@ -82,6 +82,10 @@ Oh, and if you were wondering, termenu is a combination of the words *terminal* 
 Version History
 ===============
 
+1.1.2
+-----
+* Minor visual improvements to showing ANSI-colored menu items
+
 1.1.1
 -----
 
