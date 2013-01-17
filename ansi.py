@@ -7,14 +7,17 @@ import re
 COLORS = dict(black=0, red=1, green=2, yellow=3, blue=4, magenta=5, cyan=6, white=7, default=9)
 
 def write(s):
-    sys.stdout.write(s)
-    while True:
-        try:
-            sys.stdout.flush()
-            break
-        except IOError, e:
-            if e.errno != errno.EAGAIN:
-                raise
+    def _retry(func, *args):
+        while True:
+            try:
+                func(*args)
+            except IOError, e:
+                if e.errno != errno.EAGAIN:
+                    raise
+            else:
+                break
+    _retry(sys.stdout.write, s)
+    _retry(sys.stdout.flush)
 
 def up(n=1):
     write("\x1b[%dA" % n)
