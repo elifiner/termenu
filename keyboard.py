@@ -65,7 +65,7 @@ class RawTerminal(object):
         fcntl.fcntl(STDIN, fcntl.F_SETFL, self._old)
 
     def get(self):
-        return sys.stdin.read(5)
+        return sys.stdin.read(1)
 
     def wait(self):
         select.select([STDIN], [], [])
@@ -89,7 +89,6 @@ def keyboard_listener(heartbeat=None):
             while True:
                 try:
                     sequence = sequence + terminal.get()
-                    break
                 except IOError as e:
                     if e.errno == errno.EAGAIN:
                         break
