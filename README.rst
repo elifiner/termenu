@@ -82,12 +82,19 @@ Oh, and if you were wondering, termenu is a combination of the words *terminal* 
 Version History
 ===============
 
+1.1.4
+-----
+
+* fixed a rare ansi sequence parsing issue when holding down a key
+
 1.1.3
 -----
+
 * fixed a rare 'Resource temporarily unavailable' bug
 
 1.1.2
 -----
+
 * Minor visual improvements to showing ANSI-colored menu items
 
 1.1.1
