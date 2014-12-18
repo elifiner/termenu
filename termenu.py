@@ -352,6 +352,8 @@ class FilterPlugin(Plugin):
             ansi.hide_cursor()
             prevent = True
             self._refilter()
+        elif not self.host.options and key == "space":
+            prevent = True
 
         if not prevent:
             return self.parent._on_key(key)
