@@ -379,6 +379,7 @@ class FilterPlugin(Plugin):
                 self.host.options.append(option)
         # select the first matching element (showAlways elements might not match)
         self.host.scroll = 0
+        self.host.cursor = 0
         for i, option in enumerate(self.host.options):
             if not option.attrs.get("showAlways") and text in option.text.lower():
                 self.host.cursor = i
