@@ -4,6 +4,8 @@ Abstract
 Termenu is a command line utility and Python library for displaying console
 based interactive menus.
 
+.. image:: img/termenu-showdown.gif
+
 Description
 ===========
 
