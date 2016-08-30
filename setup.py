@@ -17,7 +17,7 @@
 # along with termenu.  If not, see <http://www.gnu.org/licenses/>.
 
 from distutils.core import setup
-from version import version
+from termenu.version import version
 
 DESCRIPTION = """
 Termenu is a command line utility and Python library for displaying console
@@ -37,10 +37,9 @@ setup(
     author='Eli Finer',
     license='GPL',
     author_email='eli.finer@gmail.com',
-    url='https://github.com/gooli/termenu',
-    package_dir={'termenu':'.'},
+    url='https://github.com/elifiner/termenu',
     packages=['termenu'],
-    scripts=['termenu'],
+    scripts=['scripts/termenu'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
@@ -52,4 +51,3 @@ setup(
         'Topic :: Terminals'
     ]
 )
-
