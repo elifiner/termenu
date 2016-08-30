@@ -11,7 +11,7 @@ def write(s):
         while True:
             try:
                 func(*args)
-            except IOError, e:
+            except IOError as e:
                 if e.errno != errno.EAGAIN:
                     raise
             else:

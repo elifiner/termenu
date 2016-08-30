@@ -82,7 +82,7 @@ class Termenu(object):
                 self.text, self.result = option
             else:
                 self.text = self.result = option
-            if not isinstance(self.text, basestring):
+            if not isinstance(self.text, str):
                 self.text = str(self.text)
             self.selected = False
             self.attrs = attrs
@@ -349,7 +349,6 @@ class FilterPlugin(Plugin):
             self._refilter()
         elif self.text is not None and key == "esc":
             self.text = None
-            ansi.hide_cursor()
             prevent = True
             self._refilter()
         elif not self.host.options and key == "space":
@@ -573,9 +572,12 @@ def shorten(s, l=100):
 
 def get_terminal_size():
     import fcntl, termios, struct
-    h, w, hp, wp = struct.unpack('HHHH', fcntl.ioctl(sys.stdin,
-        termios.TIOCGWINSZ, struct.pack('HHHH', 0, 0, 0, 0)))
-    return w, h
+    try:
+        h, w, hp, wp = struct.unpack('HHHH', fcntl.ioctl(sys.stdin,
+            termios.TIOCGWINSZ, struct.pack('HHHH', 0, 0, 0, 0)))
+        return w, h
+    except OSError:
+        return 80, 25
 
 if __name__ == "__main__":
     odds = OptionGroup("Odd Numbers", [("%06d" % i, i) for i in xrange(1, 10, 2)])

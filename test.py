@@ -4,8 +4,8 @@ import unittest
 import ansi
 from termenu import Termenu, Plugin, FilterPlugin
 
-OPTIONS = ["%02d" % i for i in xrange(1,100)]
-RESULTS = ["result-%02d" % i for i in xrange(1,100)]
+OPTIONS = ["%02d" % i for i in range(1,100)]
+RESULTS = ["result-%02d" % i for i in range(1,100)]
 
 def strmenu(menu):
     return menu._get_debug_view()
@@ -261,32 +261,32 @@ class Decorate(unittest.TestCase):
 class DecorateFlags(unittest.TestCase):
     def test_active(self):
         menu = Termenu(OPTIONS, height=4)
-        assert [menu._decorate_flags(i)["active"] for i in xrange(4)] == [True, False, False, False]
+        assert [menu._decorate_flags(i)["active"] for i in range(4)] == [True, False, False, False]
 
     def test_selected(self):
         menu = Termenu(OPTIONS, height=4)
         menu._on_down()
         menu._on_space()
         menu._on_space()
-        assert [menu._decorate_flags(i)["selected"] for i in xrange(4)] == [False, True, True, False]
+        assert [menu._decorate_flags(i)["selected"] for i in range(4)] == [False, True, True, False]
 
     def test_more_above_none(self):
         menu = Termenu(OPTIONS, height=4)
-        assert [menu._decorate_flags(i)["moreAbove"] for i in xrange(4)] == [False, False, False, False]
+        assert [menu._decorate_flags(i)["moreAbove"] for i in range(4)] == [False, False, False, False]
 
     def test_more_above_one(self):
         menu = Termenu(OPTIONS, height=4)
         menu.scroll = 1
-        assert [menu._decorate_flags(i)["moreAbove"] for i in xrange(4)] == [True, False, False, False]
+        assert [menu._decorate_flags(i)["moreAbove"] for i in range(4)] == [True, False, False, False]
 
     def test_more_below_one(self):
         menu = Termenu(OPTIONS, height=4)
-        assert [menu._decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, True]
+        assert [menu._decorate_flags(i)["moreBelow"] for i in range(4)] == [False, False, False, True]
 
     def test_more_below_none(self):
         menu = Termenu(OPTIONS, height=4)
         menu.scroll = len(OPTIONS) - 4
-        assert [menu._decorate_flags(i)["moreBelow"] for i in xrange(4)] == [False, False, False, False]
+        assert [menu._decorate_flags(i)["moreBelow"] for i in range(4)] == [False, False, False, False]
 
 class Plugins(unittest.TestCase):
     class SamplePlugin(Plugin):
