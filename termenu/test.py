@@ -1,8 +1,8 @@
 import sys
 sys.path.append("..")
 import unittest
-import ansi
-from termenu import Termenu, Plugin, FilterPlugin
+from termenu import ansi
+from termenu.termenu import Termenu, Plugin, FilterPlugin
 
 OPTIONS = ["%02d" % i for i in range(1,100)]
 RESULTS = ["result-%02d" % i for i in range(1,100)]

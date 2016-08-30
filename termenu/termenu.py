@@ -1,6 +1,6 @@
 import sys
-import ansi
-from version import version
+from termenu import ansi
+from termenu.version import version
 
 def show_menu(title, options, default=None, height=None, width=None, multiselect=False, precolored=False):
     """
@@ -112,7 +112,7 @@ class Termenu(object):
 
     @pluggable
     def show(self):
-        import keyboard
+        from termenu import keyboard
         self._print_menu()
         ansi.save_position()
         ansi.hide_cursor()

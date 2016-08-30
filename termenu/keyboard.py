@@ -65,7 +65,7 @@ class RawTerminal(object):
         fcntl.fcntl(STDIN, fcntl.F_SETFL, self._old)
 
     def get(self):
-        return sys.stdin.read(1)
+        return os.read(sys.stdin.fileno(), 1).decode('ascii')
 
     def wait(self):
         select.select([STDIN], [], [])
