@@ -1,6 +1,6 @@
 import sys
-from termenu import ansi
-from termenu.version import version
+from . import ansi
+from . import version
 
 def show_menu(title, options, default=None, height=None, width=None, multiselect=False, precolored=False):
     """

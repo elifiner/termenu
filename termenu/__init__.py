@@ -1,1 +1,1 @@
-from termenu import *
+from .menu import *
