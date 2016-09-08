@@ -568,7 +568,7 @@ def redirect_std():
 def shorten(s, l=100):
     if len(s) <= l or l < 3:
         return s
-    return s[:l/2-2] + "..." + s[-l/2+1:]
+    return s[:l//2-2] + "..." + s[-l//2+1:]
 
 def get_terminal_size():
     import fcntl, termios, struct
