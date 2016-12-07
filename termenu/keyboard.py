@@ -89,7 +89,7 @@ def keyboard_listener(heartbeat=None):
             while True:
                 try:
                     sequence = sequence + terminal.get()
-                except IOError as e:
+                except OSError as e:
                     if e.errno == errno.EAGAIN:
                         break
             # handle ANSI key sequences
