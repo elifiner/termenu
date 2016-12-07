@@ -1,3 +1,4 @@
+import io
 import sys
 from . import ansi
 from . import version
@@ -552,6 +553,12 @@ class Minimenu(object):
         menu = self._make_menu(_decorate=False)
         ansi.write("\b"*len(menu)+" "*len(menu)+"\b"*len(menu))
 
+def open_raw(path, mode, buffer):
+    if sys.version_info.major >= 3:
+        return io.TextIOWrapper(io.open(path, mode + "b", 0), encoding='ascii')
+    else:
+        return open("/dev/tty", "r", 0)
+
 def redirect_std():
     """
     Connect stdin/stdout to controlling terminal even if the scripts input and output
@@ -560,9 +567,10 @@ def redirect_std():
     stdin = sys.stdin
     stdout = sys.stdout
     if not sys.stdin.isatty():
-        sys.stdin = open("/dev/tty", "r", 0)
+        sys.stdin = open_raw("/dev/tty", "r", 0)
     if not sys.stdout.isatty():
-        sys.stdout = open("/dev/tty", "w", 0)
+        sys.stdout = open_raw("/dev/tty", "w", 0)
+
     return stdin, stdout
 
 def shorten(s, l=100):
