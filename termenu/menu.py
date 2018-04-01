@@ -511,7 +511,7 @@ class Minimenu(object):
             self.cursor = 0
 
     def show(self):
-        import keyboard
+        from termenu import keyboard
         ansi.hide_cursor()
         self._print_menu(rewind=False)
         try:
