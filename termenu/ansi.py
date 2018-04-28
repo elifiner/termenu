@@ -3,21 +3,20 @@ from __future__ import print_function
 import errno
 import sys
 import re
+import os
 
 COLORS = dict(black=0, red=1, green=2, yellow=3, blue=4, magenta=5, cyan=6, white=7, default=9)
 
-def write(s):
-    def _retry(func, *args):
-        while True:
-            try:
-                func(*args)
-            except IOError as e:
-                if e.errno != errno.EAGAIN:
-                    raise
-            else:
-                break
-    _retry(sys.stdout.write, s)
-    _retry(sys.stdout.flush)
+def write(text):
+    written = 0
+    fd = sys.stdout.fileno()
+    while written < len(text):
+        remains = text[written:].encode("utf8")
+        try:
+            written += os.write(fd, remains)
+        except OSError as e:
+            if e.errno != errno.EAGAIN:
+                raise
 
 def up(n=1):
     write("\x1b[%dA" % n)
